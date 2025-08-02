@@ -232,15 +232,15 @@
             .form-grid {
                 grid-template-columns: 1fr;
             }
-            
+
             .metrics-grid {
                 grid-template-columns: 1fr;
             }
-            
+
             .current-price {
                 font-size: 36px;
             }
-            
+
             .metric-value {
                 font-size: 24px;
             }
@@ -294,7 +294,7 @@
                     <div class="metric-value" id="dailyComp">$0</div>
                     <div class="metric-subtitle">Vested value ÷ days elapsed</div>
                 </div>
-                
+
                 <div class="metric-card">
                     <div class="metric-title">Total Appreciation</div>
                     <div class="metric-value" id="totalAppreciation">0%</div>
@@ -315,7 +315,7 @@
                     <span id="vestedShares">0 shares vested</span>
                     <span id="progressPercent">0% complete</span>
                 </div>
-                
+
                 <!-- Current Quarter Progress -->
                 <div style="margin-top: 16px;">
                     <div class="progress-header">
@@ -422,10 +422,10 @@
             document.getElementById('setupForm').style.display = 'none';
             document.getElementById('dashboard').classList.add('active');
             document.getElementById('tickerDisplay').textContent = dashboardData.ticker;
-            
+
             fetchStockPrice();
             updateDashboard();
-            
+
             // Refresh every 5 minutes
             setInterval(() => {
                 fetchStockPrice();
@@ -437,7 +437,7 @@
             localStorage.removeItem('founderCompData');
             document.getElementById('setupForm').style.display = 'block';
             document.getElementById('dashboard').classList.remove('active');
-            
+
             // Clear form
             document.getElementById('ticker').value = '';
             document.getElementById('firstVestDate').value = '';
@@ -451,7 +451,7 @@
                 // Try Yahoo Finance first
                 let response = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${dashboardData.ticker}`);
                 let data = await response.json();
-                
+
                 if (data.chart && data.chart.result && data.chart.result[0]) {
                     const result = data.chart.result[0];
                     const currentPrice = result.meta.regularMarketPrice;
@@ -460,20 +460,20 @@
                     const changePercent = (change / previousClose) * 100;
 
                     dashboardData.currentPrice = currentPrice;
-                    
+
                     document.getElementById('currentPrice').textContent = `${currentPrice.toFixed(2)}`;
-                    
+
                     const changeElement = document.getElementById('priceChange');
                     const changeText = `${change >= 0 ? '+' : ''}${change.toFixed(2)} (${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%)`;
                     changeElement.textContent = changeText;
                     changeElement.className = `price-change ${change >= 0 ? 'positive' : 'negative'}`;
                     return;
                 }
-                
+
                 // Fallback: Try alternative Yahoo Finance endpoint
                 response = await fetch(`https://query2.finance.yahoo.com/v10/finance/quoteSummary/${dashboardData.ticker}?modules=price`);
                 data = await response.json();
-                
+
                 if (data.quoteSummary && data.quoteSummary.result && data.quoteSummary.result[0]) {
                     const priceData = data.quoteSummary.result[0].price;
                     const currentPrice = priceData.regularMarketPrice.raw;
@@ -482,26 +482,26 @@
                     const changePercent = (change / previousClose) * 100;
 
                     dashboardData.currentPrice = currentPrice;
-                    
+
                     document.getElementById('currentPrice').textContent = `${currentPrice.toFixed(2)}`;
-                    
+
                     const changeElement = document.getElementById('priceChange');
                     const changeText = `${change >= 0 ? '+' : ''}${change.toFixed(2)} (${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%)`;
                     changeElement.textContent = changeText;
                     changeElement.className = `price-change ${change >= 0 ? 'positive' : 'negative'}`;
                     return;
                 }
-                
+
                 throw new Error('No valid data from either endpoint');
-                
+
             } catch (error) {
                 console.error('Error fetching stock price:', error);
-                
+
                 // Show a more helpful error message
                 document.getElementById('currentPrice').textContent = `${dashboardData.conversionPrice.toFixed(2)}`;
                 document.getElementById('priceChange').textContent = 'Using conversion price (API blocked locally)';
                 document.getElementById('priceChange').className = 'price-change';
-                
+
                 // Use conversion price as fallback
                 dashboardData.currentPrice = dashboardData.conversionPrice;
             }
@@ -510,69 +510,69 @@
         function updateDashboard() {
             const firstVestDate = new Date(dashboardData.firstVestDate);
             const today = new Date();
-            
+
             // Calculate days since first vest date (for daily comp calculation)
             const daysSinceFirstVest = Math.max(0, Math.floor((today - firstVestDate) / (1000 * 60 * 60 * 24)));
-            
+
             // Calculate vesting schedule based on quarters from first vest
             const quartersSinceFirstVest = Math.floor(daysSinceFirstVest / 91.25); // ~91.25 days per quarter
             const vestsCompleted = Math.min(quartersSinceFirstVest + 1, 16); // +1 because first vest happens on firstVestDate
             const sharesVested = Math.max(0, vestsCompleted * dashboardData.sharesPerVest);
             const sharesUnvested = dashboardData.totalShares - sharesVested;
-            
+
             // Calculate next vest date (quarterly from first vest)
             const nextVestQuarter = vestsCompleted;
             const nextVestDate = new Date(firstVestDate);
             nextVestDate.setMonth(nextVestDate.getMonth() + (nextVestQuarter * 3));
-            
+
             // Full vesting date (15 quarters after first vest = 16 total vests)
             const fullVestDate = new Date(firstVestDate);
             fullVestDate.setMonth(fullVestDate.getMonth() + (15 * 3));
             const daysUntilFullyVested = Math.max(0, Math.floor((fullVestDate - today) / (1000 * 60 * 60 * 24)));
-            
+
             // Calculate values
             const currentPrice = dashboardData.currentPrice || dashboardData.conversionPrice;
             const vestedValue = sharesVested * currentPrice;
-            
+
             // Daily comp calculation: only count days since first vest date
             const dailyComp = daysSinceFirstVest > 0 ? vestedValue / daysSinceFirstVest : 0;
-            
+
             const atRiskValue = sharesUnvested * currentPrice;
             const originalTotalValue = dashboardData.totalShares * dashboardData.conversionPrice;
             const currentTotalValue = dashboardData.totalShares * currentPrice;
             const appreciation = ((currentPrice - dashboardData.conversionPrice) / dashboardData.conversionPrice) * 100;
-            
+
             // Update UI
             document.getElementById('dailyComp').textContent = `${dailyComp.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
             document.getElementById('daysRemaining').textContent = daysUntilFullyVested.toLocaleString();
             document.getElementById('atRiskValue').textContent = `${atRiskValue.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
             document.getElementById('totalAppreciation').textContent = `${appreciation >= 0 ? '+' : ''}${appreciation.toFixed(1)}%`;
-            
+
             // Progress bars
             const progressPercent = (vestsCompleted / 16) * 100;
             document.getElementById('progressFill').style.width = `${progressPercent}%`;
             document.getElementById('vestedShares').textContent = `${sharesVested.toLocaleString()} shares vested`;
             document.getElementById('progressPercent').textContent = `${progressPercent.toFixed(1)}% complete`;
-            
+
             // Current quarter progress
             const quarterProgressPercent = vestsCompleted < 16 ? (daysIntoCurrentQuarter / 91.25) * 100 : 100;
             document.getElementById('quarterProgressFill').style.width = `${Math.min(quarterProgressPercent, 100)}%`;
             document.getElementById('quarterProgress').textContent = `${Math.floor(daysIntoCurrentQuarter)} of 91 days`;
             document.getElementById('daysIntoQuarter').textContent = `${Math.floor(daysIntoCurrentQuarter)} days in`;
             document.getElementById('daysUntilNextVest').textContent = `${daysUntilNextVest} days remaining`;
-            
+
             // Next vest date
             if (vestsCompleted < 16) {
-                const nextVestFormatted = nextVestDate.toLocaleDateString('en-US', { 
-                    month: 'short', 
-                    day: 'numeric', 
-                    year: 'numeric' 
+                const nextVestFormatted = nextVestDate.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
                 });
                 document.getElementById('nextVestDate').textContent = `Next vest: ${nextVestFormatted}`;
             } else {
                 document.getElementById('nextVestDate').textContent = 'Fully vested!';
             }
-            
+
             // Financial values
             document.getElementById('originalValue').textContent = `${originalTotalValue.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
             document.getElementById('currentValue').textContent = `${currentTotalValue.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
