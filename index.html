@@ -305,11 +305,11 @@
                 <div class="metric-card">
                     <div class="metric-title">Daily Compensation</div>
                     <div class="metric-value" id="dailyComp">$0</div>
-                    <div class="metric-subtitle">Vested value ÷ days elapsed</div>
+                    <div class="metric-subtitle">Total comp ÷ vesting days</div>
                 </div>
 
                 <div class="metric-card">
-                    <div class="metric-title">Total Appreciation</div>
+                    <div class="metric-title">Stock Appreciation</div>
                     <div class="metric-value" id="totalAppreciation">0%</div>
                     <div class="metric-subtitle">Since acquisition</div>
                 </div>
@@ -317,67 +317,93 @@
 
             <!-- Progress Bar -->
             <div class="progress-card">
+                <!-- Current Quarter Progress (moved to top) -->
                 <div class="progress-header">
-                    <div class="metric-title">Vesting Progress</div>
+                    <div class="metric-title">Current Quarter Progress</div>
                     <div class="metric-subtitle" id="nextVestDate">Next vest: Loading...</div>
                 </div>
                 <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
+                    <div class="progress-fill" id="quarterProgressFill" style="background: linear-gradient(90deg, #ff9f0a, #ffd60a);"></div>
                 </div>
                 <div class="progress-details">
-                    <span id="vestedShares">0 shares vested</span>
-                    <span id="progressPercent">0% complete</span>
+                    <span id="daysIntoQuarter">0 days in</span>
+                    <span id="quarterProgress">0 of 91 days</span>
+                    <span id="daysUntilNextVest">0 days remaining</span>
                 </div>
 
-                <!-- Current Quarter Progress -->
-                <div style="margin-top: 16px;">
+                <!-- Overall Vesting Progress (moved to bottom) -->
+                <div style="margin-top: 24px;">
                     <div class="progress-header">
-                        <div class="metric-title" style="font-size: 12px; margin-bottom: 8px;">Current Quarter Progress</div>
-                        <div class="metric-subtitle" id="quarterProgress" style="font-size: 12px;">0 of 91 days</div>
+                        <div class="metric-title">Overall Vesting Progress</div>
+                        <div class="metric-subtitle">4-year schedule</div>
                     </div>
-                    <div class="progress-bar" style="height: 6px;">
-                        <div class="progress-fill" id="quarterProgressFill" style="background: linear-gradient(90deg, #ff9f0a, #ffd60a);"></div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
                     </div>
-                    <div class="progress-details" style="font-size: 12px; margin-top: 8px;">
-                        <span id="daysIntoQuarter">0 days in</span>
-                        <span id="daysUntilNextVest">0 days remaining</span>
+                    <div class="progress-details">
+                        <span id="vestedShares">0 shares vested</span>
+                        <span id="progressPercent">0% complete</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Financial Summary -->
-            <div class="metrics-grid">
-                <div class="metric-card">
-                    <div class="metric-title">Vested Value</div>
-                    <div class="metric-value" id="vestedValue">$0</div>
-                    <div class="metric-subtitle">Current value of vested shares</div>
-                </div>
+            <!-- Quarterly Details -->
+            <div class="progress-card">
+                <div class="metric-title" style="margin-bottom: 20px;">Quarterly Details</div>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-title">Shares Vesting This Quarter</div>
+                        <div class="metric-value" id="quarterShares" style="font-size: 24px;">0</div>
+                        <div class="metric-subtitle">On next vest date</div>
+                    </div>
 
-                <div class="metric-card">
-                    <div class="metric-title">At Risk Value</div>
-                    <div class="metric-value" id="atRiskValue">$0</div>
-                    <div class="metric-subtitle">Unvested shares at current price</div>
-                </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Quarter Accumulated Value</div>
+                        <div class="metric-value" id="quarterAccumulated" style="font-size: 24px;">$0</div>
+                        <div class="metric-subtitle">Value building this quarter</div>
+                    </div>
 
-                <div class="metric-card">
-                    <div class="metric-title">Days Until Fully Vested</div>
-                    <div class="metric-value" id="daysRemaining">0</div>
-                    <div class="metric-subtitle">Total time remaining</div>
-                </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Today's Vested Value</div>
+                        <div class="metric-value" id="vestedValue" style="font-size: 24px;">$0</div>
+                        <div class="metric-subtitle">Already vested shares</div>
+                    </div>
 
-                <div class="metric-card">
-                    <div class="metric-title">Original Total Value</div>
-                    <div class="metric-value" id="originalValue">$0</div>
-                    <div class="metric-subtitle">At acquisition price</div>
+                    <div class="metric-card">
+                        <div class="metric-title">At Risk This Quarter</div>
+                        <div class="metric-value" id="quarterAtRisk" style="font-size: 24px;">$0</div>
+                        <div class="metric-subtitle">If you leave before vest</div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Portfolio Overview -->
-            <div class="metrics-grid">
-                <div class="metric-card">
-                    <div class="metric-title">Current Total Value</div>
-                    <div class="metric-value" id="currentValue">$0</div>
-                    <div class="metric-subtitle">At today's price</div>
+            <!-- Overall Portfolio -->
+            <div class="progress-card">
+                <div class="metric-title" style="margin-bottom: 20px;">Overall Portfolio</div>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-title">Original Grant Value</div>
+                        <div class="metric-value" id="originalValue" style="font-size: 24px;">$0</div>
+                        <div class="metric-subtitle">At acquisition price</div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-title">Current Total Value</div>
+                        <div class="metric-value" id="currentValue" style="font-size: 24px;">$0</div>
+                        <div class="metric-subtitle">At today's price</div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-title">Total At Risk Value</div>
+                        <div class="metric-value" id="atRiskValue" style="font-size: 24px;">$0</div>
+                        <div class="metric-subtitle">All unvested shares</div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-title">Days Until Fully Vested</div>
+                        <div class="metric-value" id="daysRemaining" style="font-size: 24px;">0</div>
+                        <div class="metric-subtitle">Total time remaining</div>
+                    </div>
                 </div>
             </div>
 
@@ -445,11 +471,7 @@
             fetchStockPrice();
             updateDashboard();
 
-            // Refresh every 5 minutes
-            setInterval(() => {
-                fetchStockPrice();
-                updateDashboard();
-            }, 5 * 60 * 1000);
+            // Removed auto-refresh - only update on page refresh
         }
 
         function resetDashboard() {
@@ -609,31 +631,38 @@
             // Calculate values
             const currentPrice = dashboardData.currentPrice || dashboardData.conversionPrice;
             const vestedValue = sharesVested * currentPrice;
-            const dailyComp = daysSinceFirstVest > 0 ? vestedValue / daysSinceFirstVest : 0;
+
+            // Daily comp: (total equity value at current price + annual base salary) / days since start
+            // Using first vest date as start date for the compensation calculation
+            const totalEquityValue = dashboardData.totalShares * currentPrice;
+            const annualizedTotalComp = totalEquityValue + (dashboardData.baseSalary * 4); // 4 years of salary
+            const totalDays = 365.25 * 4; // 4 year vesting period
+            const dailyComp = annualizedTotalComp / totalDays;
+
             const atRiskValue = sharesUnvested * currentPrice;
             const originalTotalValue = dashboardData.totalShares * dashboardData.conversionPrice;
             const currentTotalValue = dashboardData.totalShares * currentPrice;
             const appreciation = ((currentPrice - dashboardData.conversionPrice) / dashboardData.conversionPrice) * 100;
 
             // Update UI
-            document.getElementById('dailyComp').textContent = `$${dailyComp.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
-            document.getElementById('vestedValue').textContent = `$${vestedValue.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+            document.getElementById('dailyComp').textContent = `${dailyComp.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+            document.getElementById('vestedValue').textContent = `${vestedValue.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
             document.getElementById('daysRemaining').textContent = daysUntilFullyVested.toLocaleString();
-            document.getElementById('atRiskValue').textContent = `$${atRiskValue.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+            document.getElementById('atRiskValue').textContent = `${atRiskValue.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
             document.getElementById('totalAppreciation').textContent = `${appreciation >= 0 ? '+' : ''}${appreciation.toFixed(1)}%`;
 
-            // Progress bars
-            const progressPercent = (vestsCompleted / 16) * 100;
-            document.getElementById('progressFill').style.width = `${progressPercent}%`;
-            document.getElementById('vestedShares').textContent = `${sharesVested.toLocaleString()} shares vested`;
-            document.getElementById('progressPercent').textContent = `${progressPercent.toFixed(1)}% complete`;
-
-            // Current quarter progress
+            // Progress bars - Current quarter first
             const quarterProgressPercent = vestsCompleted < 16 ? (daysIntoCurrentQuarter / 91.25) * 100 : 100;
             document.getElementById('quarterProgressFill').style.width = `${Math.min(quarterProgressPercent, 100)}%`;
             document.getElementById('quarterProgress').textContent = `${Math.floor(daysIntoCurrentQuarter)} of 91 days`;
             document.getElementById('daysIntoQuarter').textContent = `${Math.floor(daysIntoCurrentQuarter)} days in`;
             document.getElementById('daysUntilNextVest').textContent = `${daysUntilNextVest} days remaining`;
+
+            // Overall vesting progress
+            const progressPercent = (vestsCompleted / 16) * 100;
+            document.getElementById('progressFill').style.width = `${progressPercent}%`;
+            document.getElementById('vestedShares').textContent = `${sharesVested.toLocaleString()} shares vested`;
+            document.getElementById('progressPercent').textContent = `${progressPercent.toFixed(1)}% complete`;
 
             // Next vest date
             if (vestsCompleted < 16) {
@@ -648,8 +677,8 @@
             }
 
             // Financial values
-            document.getElementById('originalValue').textContent = `$${originalTotalValue.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
-            document.getElementById('currentValue').textContent = `$${currentTotalValue.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+            document.getElementById('originalValue').textContent = `${originalTotalValue.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+            document.getElementById('currentValue').textContent = `${currentTotalValue.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
         }
     </script>
 </body>
