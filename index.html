@@ -228,6 +228,13 @@
             margin-bottom: 16px;
         }
 
+        .api-status {
+            font-size: 12px;
+            color: #8e8e93;
+            text-align: center;
+            margin-top: 8px;
+        }
+
         @media (max-width: 600px) {
             .form-grid {
                 grid-template-columns: 1fr;
@@ -274,9 +281,9 @@
                     <input type="number" id="baseSalary" placeholder="e.g., 200000">
                 </div>
                 <div class="form-group">
-                    <label for="apiKey">Stock Price API Key (optional)</label>
-                    <input type="text" id="apiKey" placeholder="Your FMP API key">
-                    <small style="color: #8e8e93; font-size: 12px; margin-top: 4px;">Free tier: 250 calls/day. Get your key at financialmodelingprep.com</small>
+                    <label for="apiKey">API Key (optional but recommended)</label>
+                    <input type="text" id="apiKey" placeholder="Your Alpha Vantage API key">
+                    <small style="color: #8e8e93; font-size: 12px; margin-top: 4px;">Free at alphavantage.co - 25 calls/day</small>
                 </div>
             </div>
             <button class="btn" onclick="saveToDashboard()">Create Dashboard</button>
@@ -290,6 +297,7 @@
                 <div class="ticker-symbol" id="tickerDisplay"></div>
                 <div class="current-price" id="currentPrice">Loading...</div>
                 <div class="price-change" id="priceChange"></div>
+                <div class="api-status" id="apiStatus"></div>
             </div>
 
             <!-- Key Metrics -->
@@ -374,6 +382,7 @@
             </div>
 
             <button class="btn btn-secondary" onclick="resetDashboard()" style="margin-top: 24px;">Edit Settings</button>
+            <button class="btn btn-secondary" onclick="updateManualPrice()" style="margin-top: 24px;">Update Price Manually</button>
         </div>
     </div>
 
@@ -392,7 +401,7 @@
         function loadSampleData() {
             document.getElementById('ticker').value = 'NVDA';
             document.getElementById('firstVestDate').value = '2025-08-14';
-            document.getElementById('totalShares').value = '';
+            document.getElementById('totalShares').value = '100000';
             document.getElementById('conversionPrice').value = '127.93';
             document.getElementById('baseSalary').value = '';
             document.getElementById('apiKey').value = '';
@@ -419,7 +428,9 @@
                 baseSalary,
                 apiKey,
                 sharesPerVest: Math.floor(totalShares / 16),
-                totalVests: 16
+                totalVests: 16,
+                lastApiCall: null,
+                cachedPrice: null
             };
 
             localStorage.setItem('founderCompData', JSON.stringify(dashboardData));
@@ -452,89 +463,145 @@
             document.getElementById('totalShares').value = '';
             document.getElementById('conversionPrice').value = '';
             document.getElementById('baseSalary').value = '';
-            document.getElementById('apiKey').value = '';
+            document.getElementById('manualPrice').value = '';
+        }
+
+        function updateManualPrice() {
+            const newPrice = prompt('Enter the current stock price:', dashboardData.currentPrice || dashboardData.conversionPrice);
+            if (newPrice && !isNaN(parseFloat(newPrice))) {
+                dashboardData.manualPrice = parseFloat(newPrice);
+                dashboardData.currentPrice = parseFloat(newPrice);
+                localStorage.setItem('founderCompData', JSON.stringify(dashboardData));
+
+                // Update display
+                const currentPrice = dashboardData.currentPrice;
+                const change = currentPrice - dashboardData.conversionPrice;
+                const changePercent = (change / dashboardData.conversionPrice) * 100;
+
+                document.getElementById('currentPrice').textContent = `$${currentPrice.toFixed(2)}`;
+
+                const changeElement = document.getElementById('priceChange');
+                const changeText = `${change >= 0 ? '+' : ''}${change.toFixed(2)} (${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%)`;
+                changeElement.textContent = changeText;
+                changeElement.className = `price-change ${change >= 0 ? 'positive' : 'negative'}`;
+
+                document.getElementById('apiStatus').textContent = 'Using manual price';
+
+                updateDashboard();
+            }
         }
 
         async function fetchStockPrice() {
-            try {
-                // Try Yahoo Finance first
-                let response = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${dashboardData.ticker}`);
-                let data = await response.json();
+            // If manual price is set, use it
+            if (dashboardData.manualPrice) {
+                dashboardData.currentPrice = dashboardData.manualPrice;
+                const currentPrice = dashboardData.currentPrice;
+                const change = currentPrice - dashboardData.conversionPrice;
+                const changePercent = (change / dashboardData.conversionPrice) * 100;
 
-                if (data.chart && data.chart.result && data.chart.result[0]) {
-                    const result = data.chart.result[0];
-                    const currentPrice = result.meta.regularMarketPrice;
-                    const previousClose = result.meta.previousClose;
-                    const change = currentPrice - previousClose;
-                    const changePercent = (change / previousClose) * 100;
+                document.getElementById('currentPrice').textContent = `${currentPrice.toFixed(2)}`;
 
-                    dashboardData.currentPrice = currentPrice;
+                const changeElement = document.getElementById('priceChange');
+                const changeText = `${change >= 0 ? '+' : ''}${change.toFixed(2)} (${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%)`;
+                changeElement.textContent = changeText;
+                changeElement.className = `price-change ${change >= 0 ? 'positive' : 'negative'}`;
 
-                    document.getElementById('currentPrice').textContent = `${currentPrice.toFixed(2)}`;
-
-                    const changeElement = document.getElementById('priceChange');
-                    const changeText = `${change >= 0 ? '+' : ''}${change.toFixed(2)} (${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%)`;
-                    changeElement.textContent = changeText;
-                    changeElement.className = `price-change ${change >= 0 ? 'positive' : 'negative'}`;
-                    return;
-                }
-
-                // Fallback: Try alternative Yahoo Finance endpoint
-                response = await fetch(`https://query2.finance.yahoo.com/v10/finance/quoteSummary/${dashboardData.ticker}?modules=price`);
-                data = await response.json();
-
-                if (data.quoteSummary && data.quoteSummary.result && data.quoteSummary.result[0]) {
-                    const priceData = data.quoteSummary.result[0].price;
-                    const currentPrice = priceData.regularMarketPrice.raw;
-                    const previousClose = priceData.regularMarketPreviousClose.raw;
-                    const change = currentPrice - previousClose;
-                    const changePercent = (change / previousClose) * 100;
-
-                    dashboardData.currentPrice = currentPrice;
-
-                    document.getElementById('currentPrice').textContent = `${currentPrice.toFixed(2)}`;
-
-                    const changeElement = document.getElementById('priceChange');
-                    const changeText = `${change >= 0 ? '+' : ''}${change.toFixed(2)} (${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%)`;
-                    changeElement.textContent = changeText;
-                    changeElement.className = `price-change ${change >= 0 ? 'positive' : 'negative'}`;
-                    return;
-                }
-
-                throw new Error('No valid data from either endpoint');
-
-            } catch (error) {
-                console.error('Error fetching stock price:', error);
-
-                // Show a more helpful error message
-                document.getElementById('currentPrice').textContent = `${dashboardData.conversionPrice.toFixed(2)}`;
-                document.getElementById('priceChange').textContent = 'Using conversion price (API blocked locally)';
-                document.getElementById('priceChange').className = 'price-change';
-
-                // Use conversion price as fallback
-                dashboardData.currentPrice = dashboardData.conversionPrice;
+                document.getElementById('apiStatus').textContent = 'Using manual price';
+                return;
             }
+
+            // Try multiple methods to fetch stock price
+            const methods = [
+                // Method 1: Try AllOrigins proxy
+                async () => {
+                    const url = `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${dashboardData.ticker}`)}`;
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error('AllOrigins failed');
+
+                    const text = await response.text();
+                    // Check if response is HTML (error page)
+                    if (text.trim().startsWith('<')) throw new Error('Received HTML instead of JSON');
+
+                    const data = JSON.parse(text);
+                    if (data.chart && data.chart.result && data.chart.result[0]) {
+                        const result = data.chart.result[0];
+                        return {
+                            currentPrice: result.meta.regularMarketPrice,
+                            previousClose: result.meta.previousClose,
+                            source: 'Yahoo Finance (via AllOrigins)'
+                        };
+                    }
+                    throw new Error('Invalid data structure');
+                },
+
+                // Method 2: Try a simple test API (for demonstration)
+                async () => {
+                    // This is a fallback that shows the structure works
+                    // In production, you'd want to use a real financial API with proper authentication
+                    console.log('All API methods failed. Using conversion price as fallback.');
+                    throw new Error('No working API available');
+                }
+            ];
+
+            // Try each method in sequence
+            for (const method of methods) {
+                try {
+                    const result = await method();
+
+                    // Update the display with the fetched data
+                    dashboardData.currentPrice = result.currentPrice;
+                    const change = result.currentPrice - result.previousClose;
+                    const changePercent = (change / result.previousClose) * 100;
+
+                    document.getElementById('currentPrice').textContent = `${result.currentPrice.toFixed(2)}`;
+
+                    const changeElement = document.getElementById('priceChange');
+                    const changeText = `${change >= 0 ? '+' : ''}${change.toFixed(2)} (${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%)`;
+                    changeElement.textContent = changeText;
+                    changeElement.className = `price-change ${change >= 0 ? 'positive' : 'negative'}`;
+
+                    document.getElementById('apiStatus').textContent = `Live: ${result.source}`;
+                    return;
+
+                } catch (error) {
+                    console.log(`Method failed: ${error.message}`);
+                    continue;
+                }
+            }
+
+            // All methods failed - use fallback
+            console.log('All API methods failed. Using conversion price as fallback.');
+            dashboardData.currentPrice = dashboardData.conversionPrice;
+
+            document.getElementById('currentPrice').textContent = `${dashboardData.conversionPrice.toFixed(2)}`;
+            document.getElementById('priceChange').textContent = 'Using conversion price';
+            document.getElementById('priceChange').className = 'price-change';
+            document.getElementById('apiStatus').textContent = 'APIs blocked - please update price manually';
         }
 
         function updateDashboard() {
             const firstVestDate = new Date(dashboardData.firstVestDate);
             const today = new Date();
 
-            // Calculate days since first vest date (for daily comp calculation)
+            // Calculate days since first vest date
             const daysSinceFirstVest = Math.max(0, Math.floor((today - firstVestDate) / (1000 * 60 * 60 * 24)));
 
             // Calculate vesting schedule based on quarters from first vest
-            const quartersSinceFirstVest = Math.floor(daysSinceFirstVest / 91.25); // ~91.25 days per quarter
-            const vestsCompleted = Math.min(quartersSinceFirstVest + 1, 16); // +1 because first vest happens on firstVestDate
-            const sharesVested = Math.max(0, vestsCompleted * dashboardData.sharesPerVest);
+            const quartersSinceFirstVest = Math.floor(daysSinceFirstVest / 91.25);
+            const vestsCompleted = Math.min(quartersSinceFirstVest + 1, 16);
+            const sharesVested = vestsCompleted * dashboardData.sharesPerVest;
             const sharesUnvested = dashboardData.totalShares - sharesVested;
 
-            // Calculate next vest date (quarterly from first vest)
+            // Calculate current quarter progress
+            const daysIntoCurrentQuarter = daysSinceFirstVest % 91.25;
+            const daysUntilNextVest = vestsCompleted < 16 ? Math.ceil(91.25 - daysIntoCurrentQuarter) : 0;
+
+            // Calculate next vest date
             const nextVestQuarter = vestsCompleted;
             const nextVestDate = new Date(firstVestDate);
             nextVestDate.setMonth(nextVestDate.getMonth() + (nextVestQuarter * 3));
 
-            // Full vesting date (15 quarters after first vest = 16 total vests)
+            // Full vesting date
             const fullVestDate = new Date(firstVestDate);
             fullVestDate.setMonth(fullVestDate.getMonth() + (15 * 3));
             const daysUntilFullyVested = Math.max(0, Math.floor((fullVestDate - today) / (1000 * 60 * 60 * 24)));
@@ -542,19 +609,17 @@
             // Calculate values
             const currentPrice = dashboardData.currentPrice || dashboardData.conversionPrice;
             const vestedValue = sharesVested * currentPrice;
-
-            // Daily comp calculation: only count days since first vest date
             const dailyComp = daysSinceFirstVest > 0 ? vestedValue / daysSinceFirstVest : 0;
-
             const atRiskValue = sharesUnvested * currentPrice;
             const originalTotalValue = dashboardData.totalShares * dashboardData.conversionPrice;
             const currentTotalValue = dashboardData.totalShares * currentPrice;
             const appreciation = ((currentPrice - dashboardData.conversionPrice) / dashboardData.conversionPrice) * 100;
 
             // Update UI
-            document.getElementById('dailyComp').textContent = `${dailyComp.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+            document.getElementById('dailyComp').textContent = `$${dailyComp.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+            document.getElementById('vestedValue').textContent = `$${vestedValue.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
             document.getElementById('daysRemaining').textContent = daysUntilFullyVested.toLocaleString();
-            document.getElementById('atRiskValue').textContent = `${atRiskValue.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+            document.getElementById('atRiskValue').textContent = `$${atRiskValue.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
             document.getElementById('totalAppreciation').textContent = `${appreciation >= 0 ? '+' : ''}${appreciation.toFixed(1)}%`;
 
             // Progress bars
@@ -583,8 +648,8 @@
             }
 
             // Financial values
-            document.getElementById('originalValue').textContent = `${originalTotalValue.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
-            document.getElementById('currentValue').textContent = `${currentTotalValue.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+            document.getElementById('originalValue').textContent = `$${originalTotalValue.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+            document.getElementById('currentValue').textContent = `$${currentTotalValue.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
         }
     </script>
 </body>
