@@ -5,158 +5,158 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Founder Compensation Dashboard</title>
     <style>
-        * { 
-            margin: 0; 
-            padding: 0; 
-            box-sizing: border-box; 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif; 
-            background: #000; 
-            color: #fff; 
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: #000;
+            color: #fff;
             padding: 20px;
             min-height: 100vh;
             background: radial-gradient(ellipse at top, #1a1a1a 0%, #000 100%);
         }
-        
-        .container { 
-            max-width: 900px; 
-            margin: 0 auto; 
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
         }
-        
-        .card { 
+
+        .card {
             background: rgba(28, 28, 30, 0.9);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px; 
-            padding: 24px; 
+            border-radius: 20px;
+            padding: 24px;
             margin-bottom: 24px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
             transition: all 0.3s ease;
         }
-        
+
         .card:hover {
             transform: translateY(-2px);
             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
         }
-        
-        .form-group { 
-            margin-bottom: 20px; 
+
+        .form-group {
+            margin-bottom: 20px;
         }
-        
-        label { 
-            display: block; 
-            margin-bottom: 8px; 
-            color: #a1a1a6; 
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #a1a1a6;
             font-size: 15px;
             font-weight: 500;
             letter-spacing: -0.01em;
         }
-        
-        input { 
-            width: 100%; 
+
+        input {
+            width: 100%;
             padding: 16px 20px;
             border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px; 
+            border-radius: 12px;
             background: rgba(0, 0, 0, 0.6);
-            color: #fff; 
+            color: #fff;
             font-size: 17px;
             font-weight: 400;
             transition: all 0.2s ease;
             backdrop-filter: blur(10px);
         }
-        
-        input:focus { 
-            outline: none; 
+
+        input:focus {
+            outline: none;
             border-color: #007aff;
             box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.2);
             transform: scale(1.02);
         }
-        
+
         input::placeholder {
             color: #6d6d70;
         }
-        
-        .button { 
+
+        .button {
             background: linear-gradient(135deg, #007aff 0%, #0051d0 100%);
-            color: #fff; 
-            border: none; 
-            padding: 16px 32px; 
-            border-radius: 12px; 
+            color: #fff;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
             font-size: 17px;
             font-weight: 600;
-            cursor: pointer; 
-            margin-right: 16px; 
+            cursor: pointer;
+            margin-right: 16px;
             margin-bottom: 16px;
             transition: all 0.2s ease;
             box-shadow: 0 4px 16px rgba(0, 122, 255, 0.3);
         }
-        
-        .button:hover { 
+
+        .button:hover {
             transform: translateY(-1px);
             box-shadow: 0 6px 20px rgba(0, 122, 255, 0.4);
         }
-        
+
         .button:active {
             transform: translateY(0);
         }
-        
-        .button.secondary { 
+
+        .button.secondary {
             background: linear-gradient(135deg, #48484a 0%, #2c2c2e 100%);
             box-shadow: 0 4px 16px rgba(72, 72, 74, 0.3);
         }
-        
-        .button.secondary:hover { 
+
+        .button.secondary:hover {
             box-shadow: 0 6px 20px rgba(72, 72, 74, 0.4);
         }
-        
-        .stock-header { 
+
+        .stock-header {
             background: linear-gradient(135deg, #007aff 0%, #5856d6 50%, #af52de 100%);
             text-align: center;
             position: relative;
             overflow: hidden;
         }
-        
-        .ticker { 
-            font-size: 28px; 
-            font-weight: 700; 
+
+        .ticker {
+            font-size: 28px;
+            font-weight: 700;
             margin-bottom: 8px;
             letter-spacing: -0.02em;
         }
-        
-        .price { 
-            font-size: 48px; 
-            font-weight: 800; 
+
+        .price {
+            font-size: 48px;
+            font-weight: 800;
             margin-bottom: 8px;
             letter-spacing: -0.03em;
         }
-        
-        .change { 
-            font-size: 20px; 
+
+        .change {
+            font-size: 20px;
             margin-bottom: 8px;
             font-weight: 600;
         }
-        
-        .updated { 
-            font-size: 15px; 
+
+        .updated {
+            font-size: 15px;
             opacity: 0.8;
             font-weight: 500;
         }
-        
-        .metrics-grid { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 24px; 
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
         }
-        
-        .quad-grid { 
-            display: grid; 
-            grid-template-columns: repeat(3, 1fr); 
-            gap: 20px; 
+
+        .quad-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
         }
-        
-        .metric { 
+
+        .metric {
             text-align: center;
             padding: 20px;
             background: rgba(0, 0, 0, 0.3);
@@ -164,15 +164,15 @@
             border: 1px solid rgba(255, 255, 255, 0.05);
             transition: all 0.2s ease;
         }
-        
+
         .metric:hover {
             background: rgba(0, 0, 0, 0.4);
             transform: translateY(-1px);
         }
-        
-        .metric-value { 
-            font-size: 28px; 
-            font-weight: 700; 
+
+        .metric-value {
+            font-size: 28px;
+            font-weight: 700;
             background: linear-gradient(135deg, #007aff 0%, #5856d6 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -180,55 +180,55 @@
             margin-bottom: 8px;
             letter-spacing: -0.02em;
         }
-        
-        .metric-label { 
-            font-size: 15px; 
+
+        .metric-label {
+            font-size: 15px;
             color: #a1a1a6;
             font-weight: 500;
             letter-spacing: -0.01em;
         }
-        
-        .progress-section { 
-            margin-bottom: 32px; 
+
+        .progress-section {
+            margin-bottom: 32px;
         }
-        
-        .progress-section:last-child { 
-            margin-bottom: 0; 
+
+        .progress-section:last-child {
+            margin-bottom: 0;
         }
-        
-        .progress-header { 
-            margin-bottom: 16px; 
+
+        .progress-header {
+            margin-bottom: 16px;
         }
-        
-        .progress-title { 
-            font-size: 20px; 
-            font-weight: 700; 
+
+        .progress-title {
+            font-size: 20px;
+            font-weight: 700;
             margin-bottom: 6px;
             letter-spacing: -0.02em;
         }
-        
-        .progress-subtitle { 
-            font-size: 16px; 
+
+        .progress-subtitle {
+            font-size: 16px;
             color: #a1a1a6;
             font-weight: 500;
         }
-        
-        .progress-bar { 
-            height: 12px; 
-            background: rgba(255, 255, 255, 0.1); 
-            border-radius: 8px; 
-            overflow: hidden; 
+
+        .progress-bar {
+            height: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
             margin-bottom: 12px;
             box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
         }
-        
-        .progress-fill { 
-            height: 100%; 
+
+        .progress-fill {
+            height: 100%;
             transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
         }
-        
+
         .progress-fill::after {
             content: '';
             position: absolute;
@@ -239,32 +239,32 @@
             background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%);
             animation: progressShine 2s infinite;
         }
-        
+
         @keyframes progressShine {
             0% { transform: translateX(-100%); }
             100% { transform: translateX(100%); }
         }
-        
-        .orange-gradient { 
+
+        .orange-gradient {
             background: linear-gradient(90deg, #ff9500 0%, #ffb340 50%, #ff9500 100%);
             box-shadow: 0 2px 8px rgba(255, 149, 0, 0.3);
         }
-        
-        .blue-gradient { 
+
+        .blue-gradient {
             background: linear-gradient(90deg, #007aff 0%, #5856d6 50%, #af52de 100%);
             box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
         }
-        
-        .progress-text { 
-            font-size: 16px; 
+
+        .progress-text {
+            font-size: 16px;
             color: #a1a1a6;
             font-weight: 500;
         }
-        
-        .hidden { 
-            display: none; 
+
+        .hidden {
+            display: none;
         }
-        
+
         h1 {
             font-size: 36px;
             font-weight: 800;
@@ -276,36 +276,36 @@
             margin-bottom: 32px;
             letter-spacing: -0.03em;
         }
-        
+
         h3 {
             font-size: 22px;
             font-weight: 700;
             margin-bottom: 20px;
             letter-spacing: -0.02em;
         }
-        
+
         @media (max-width: 768px) {
-            .metrics-grid, .quad-grid { 
-                grid-template-columns: 1fr; 
+            .metrics-grid, .quad-grid {
+                grid-template-columns: 1fr;
             }
-            
-            .price { 
-                font-size: 36px; 
+
+            .price {
+                font-size: 36px;
             }
-            
-            .metric-value { 
-                font-size: 24px; 
+
+            .metric-value {
+                font-size: 24px;
             }
-            
+
             .container {
                 padding: 0 16px;
             }
-            
+
             .card {
                 padding: 20px;
             }
         }
-        
+
         @media (max-width: 480px) {
             .quad-grid {
                 grid-template-columns: 1fr;
@@ -319,32 +319,37 @@
         <div id="setupForm">
             <div class="card">
                 <h1 style="margin-bottom: 24px; text-align: center;">Founder Compensation Dashboard</h1>
-                
+
                 <div class="form-group">
                     <label for="ticker">Stock Ticker Symbol</label>
                     <input type="text" id="ticker" placeholder="e.g., NVDA">
                 </div>
-                
+
+                <div class="form-group">
+                    <label for="startDate">Start Date</label>
+                    <input type="date" id="startDate">
+                </div>
+
                 <div class="form-group">
                     <label for="vestDate">First Vest Date</label>
                     <input type="date" id="vestDate">
                 </div>
-                
+
                 <div class="form-group">
                     <label for="totalShares">Total Shares Granted</label>
                     <input type="number" id="totalShares" placeholder="e.g., 100000">
                 </div>
-                
+
                 <div class="form-group">
                     <label for="strikePrice">Conversion/Strike Price</label>
                     <input type="number" id="strikePrice" step="0.01" placeholder="e.g., 127.93">
                 </div>
-                
+
                 <div class="form-group">
                     <label for="baseSalary">Base Salary (optional)</label>
                     <input type="number" id="baseSalary" placeholder="e.g., 200000">
                 </div>
-                
+
                 <button class="button" onclick="createDashboard()">Create Dashboard</button>
                 <button class="button secondary" onclick="loadSampleData()">Load Sample Data</button>
             </div>
@@ -387,6 +392,17 @@
                         <div class="progress-fill orange-gradient" id="quarterProgress"></div>
                     </div>
                     <div class="progress-text" id="nextVest"></div>
+                </div>
+
+                <div class="progress-section">
+                    <div class="progress-header">
+                        <div class="progress-title">Escrow Period Progress</div>
+                        <div class="progress-subtitle" id="escrowDays"></div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="escrowProgress" style="background: linear-gradient(90deg, #ff6b6b 0%, #ffa726 50%, #66bb6a 100%); box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);"></div>
+                    </div>
+                    <div class="progress-text" id="escrowRelease"></div>
                 </div>
 
                 <div class="progress-section">
@@ -447,8 +463,12 @@
         function loadSampleData() {
             const futureDate = new Date();
             futureDate.setDate(futureDate.getDate() + 30);
-            
+
+            // Default start date to March 15, 2025
+            const defaultStartDate = new Date('2025-03-15');
+
             document.getElementById('ticker').value = 'NVDA';
+            document.getElementById('startDate').value = defaultStartDate.toISOString().split('T')[0];
             document.getElementById('vestDate').value = futureDate.toISOString().split('T')[0];
             document.getElementById('totalShares').value = '100000';
             document.getElementById('strikePrice').value = '127.93';
@@ -458,19 +478,20 @@
         // Create dashboard
         function createDashboard() {
             const ticker = document.getElementById('ticker').value;
+            const startDate = document.getElementById('startDate').value;
             const vestDate = document.getElementById('vestDate').value;
             const totalShares = parseInt(document.getElementById('totalShares').value);
             const strikePrice = parseFloat(document.getElementById('strikePrice').value);
             const baseSalary = parseFloat(document.getElementById('baseSalary').value) || 0;
 
-            if (!ticker || !vestDate || !totalShares || !strikePrice) {
+            if (!ticker || !startDate || !vestDate || !totalShares || !strikePrice) {
                 alert('Please fill in all required fields');
                 return;
             }
 
-            compData = { ticker, vestDate, totalShares, strikePrice, baseSalary };
+            compData = { ticker, startDate, vestDate, totalShares, strikePrice, baseSalary };
             localStorage.setItem('founderCompData', JSON.stringify(compData));
-            
+
             loadStockData().then(() => {
                 showDashboard();
                 updateDashboard();
@@ -510,60 +531,83 @@
             return '$' + num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
+        // Calculate escrow progress
+        function calculateEscrow() {
+            const now = new Date();
+            const startDate = new Date(compData.startDate);
+            const escrowMonths = 18;
+            const escrowRelease = new Date(startDate);
+            escrowRelease.setMonth(escrowRelease.getMonth() + escrowMonths);
+
+            const totalEscrowDays = (escrowRelease - startDate) / (1000 * 60 * 60 * 24);
+            const daysSinceStart = Math.max(0, (now - startDate) / (1000 * 60 * 60 * 24));
+            const daysUntilRelease = Math.max(0, (escrowRelease - now) / (1000 * 60 * 60 * 24));
+
+            const escrowProgress = Math.min(daysSinceStart / totalEscrowDays, 1);
+
+            return {
+                escrowRelease,
+                totalEscrowDays: Math.ceil(totalEscrowDays),
+                daysSinceStart: Math.floor(daysSinceStart),
+                daysUntilRelease: Math.ceil(daysUntilRelease),
+                escrowProgress,
+                isComplete: now >= escrowRelease
+            };
+        }
         // Calculate vesting progress
         function calculateVesting() {
             const now = new Date();
             const firstVest = new Date(compData.vestDate);
-            
+
             // DEBUG: Log the key dates and calculations
             console.log('=== VESTING DEBUG ===');
             console.log('Today:', now.toISOString().split('T')[0]);
             console.log('First Vest Date:', firstVest.toISOString().split('T')[0]);
-            
+
             // Calculate the start of the vesting schedule (91.25 days before first vest)
             const quarterLength = 91.25;
             const vestingStart = new Date(firstVest.getTime() - quarterLength * 24 * 60 * 60 * 1000);
-            
+
             const daysSinceStart = Math.max(0, (now - vestingStart) / (1000 * 60 * 60 * 24));
             const daysSinceFirst = (now - firstVest) / (1000 * 60 * 60 * 24);
-            
+
             console.log('Vesting Start Date:', vestingStart.toISOString().split('T')[0]);
             console.log('Days since vesting start:', daysSinceStart);
             console.log('Days since first vest:', daysSinceFirst);
             console.log('Quarter length:', quarterLength);
-            
+
             const totalQuarters = 16;
             const sharesPerVest = compData.totalShares / totalQuarters;
-            
+
             // Completed vests (only count if we've passed the first vest date)
             const completedVests = Math.max(0, Math.floor(daysSinceFirst / quarterLength) + 1);
             const vestedShares = daysSinceFirst >= 0 ? Math.min(completedVests * sharesPerVest, compData.totalShares) : 0;
-            
+
             // Current quarter progress (always relative to vesting start)
             const currentQuarter = Math.floor(daysSinceStart / quarterLength);
             const daysIntoQuarter = daysSinceStart % quarterLength;
             const quarterProgress = Math.min(daysIntoQuarter / quarterLength, 1);
-            
+
             console.log('Current quarter:', currentQuarter);
             console.log('Days into quarter:', daysIntoQuarter);
             console.log('Quarter progress:', quarterProgress);
             console.log('Completed vests:', completedVests);
             console.log('Vested shares:', vestedShares);
-            
+
             // Next vest date
             const nextVestDate = new Date(firstVest.getTime() + Math.max(0, Math.floor(daysSinceFirst / quarterLength) + 1) * quarterLength * 24 * 60 * 60 * 1000);
             const daysToNextVest = Math.ceil((nextVestDate - now) / (1000 * 60 * 60 * 24));
-            
+
             console.log('Next vest date:', nextVestDate.toISOString().split('T')[0]);
             console.log('Days to next vest:', daysToNextVest);
-            
+
             // Overall progress
             const totalDays = totalQuarters * quarterLength;
             const overallProgress = Math.min(daysSinceStart / totalDays, 1);
-            
+
             console.log('Overall progress:', overallProgress);
             console.log('==================');
-            
+
             return {
                 vestedShares,
                 quarterProgress,
@@ -580,56 +624,71 @@
         // Update dashboard
         function updateDashboard() {
             const vesting = calculateVesting();
+            const escrow = calculateEscrow();
             const currentPrice = stockData.price;
             const priceChange = ((currentPrice - compData.strikePrice) / compData.strikePrice) * 100;
-            
+
             // Stock header
             document.getElementById('dashTicker').textContent = compData.ticker;
             document.getElementById('stockPrice').textContent = formatCurrency(currentPrice);
-            document.getElementById('priceChange').textContent = 
+            document.getElementById('priceChange').textContent =
                 `${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}% from acquisition`;
-            
+
             const hoursAgo = Math.floor((Date.now() / 1000 - stockData.timestamp) / 3600);
             document.getElementById('lastUpdated').textContent = `Updated ${hoursAgo}h ago`;
-            
+
             // Top metrics
             const totalEquityValue = compData.totalShares * currentPrice;
             const totalComp = totalEquityValue + (compData.baseSalary * 4);
             const dailyComp = totalComp / 1461; // 4 years in days
-            
+
             document.getElementById('dailyComp').textContent = formatCurrency(dailyComp);
-            
+
             // Stock appreciation with trending indicator
             const trendingUp = priceChange >= 0;
             const trendSymbol = trendingUp ? '↗' : '↘';
             const trendText = trendingUp ? 'trending up' : 'trending down';
-            document.getElementById('stockAppreciation').textContent = 
+            document.getElementById('stockAppreciation').textContent =
                 `${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(1)}% ${trendSymbol} ${trendText}`;
-            
-            // Vesting progress
-            document.getElementById('quarterDays').textContent = 
-                `${Math.floor(vesting.daysIntoQuarter)} of 91 days, ${vesting.daysToNextVest} days remaining`;
+
+            // Vesting progress - consistent format: X of Y days, Z%, N days remaining
+            const quarterDaysTotal = 91;
+            const quarterPercent = Math.round(vesting.quarterProgress * 100);
+            document.getElementById('quarterDays').textContent =
+                `${Math.floor(vesting.daysIntoQuarter)} of ${quarterDaysTotal} days, ${quarterPercent}%, ${vesting.daysToNextVest} days remaining`;
             document.getElementById('quarterProgress').style.width = `${vesting.quarterProgress * 100}%`;
-            document.getElementById('nextVest').textContent = 
+            document.getElementById('nextVest').textContent =
                 `Next vest: ${vesting.nextVestDate.toLocaleDateString()}`;
-            
+
+            // Escrow progress - consistent format
+            const escrowPercent = Math.round(escrow.escrowProgress * 100);
+            document.getElementById('escrowDays').textContent =
+                `${escrow.daysSinceStart} of ${escrow.totalEscrowDays} days, ${escrowPercent}%, ${escrow.daysUntilRelease} days remaining`;
+            document.getElementById('escrowProgress').style.width = `${escrow.escrowProgress * 100}%`;
+            document.getElementById('escrowRelease').textContent =
+                escrow.isComplete ? 'Escrow released!' : `Escrow release: ${escrow.escrowRelease.toLocaleDateString()}`;
+
+            // Overall vesting progress - consistent format
+            const overallPercent = Math.round(vesting.overallProgress * 100);
+            const totalVestingDays = Math.ceil(16 * 91.25);
+            const daysSinceVestingStart = Math.max(0, Math.floor((new Date() - new Date(new Date(compData.vestDate).getTime() - 91.25 * 24 * 60 * 60 * 1000)) / (1000 * 60 * 60 * 24)));
             document.getElementById('overallProgress').style.width = `${vesting.overallProgress * 100}%`;
-            document.getElementById('overallText').textContent = 
-                `${formatNumber(vesting.vestedShares)} shares vested, ${(vesting.overallProgress * 100).toFixed(1)}% complete, ${formatNumber(vesting.totalDays)} days until fully vested`;
-            
+            document.getElementById('overallText').textContent =
+                `${daysSinceVestingStart} of ${totalVestingDays} days, ${overallPercent}%, ${formatNumber(vesting.vestedShares)} shares vested`;
+
             // Quarterly details
             document.getElementById('sharesThisQuarter').textContent = formatNumber(Math.floor(vesting.sharesPerVest));
-            
+
             const quarterAccumValue = vesting.sharesPerVest * currentPrice * vesting.quarterProgress;
             document.getElementById('quarterValue').textContent = formatCurrency(quarterAccumValue);
-            
+
             // Overall portfolio
             const originalValue = compData.totalShares * compData.strikePrice;
             document.getElementById('originalValue').textContent = formatCurrency(originalValue);
-            
+
             const currentTotalValue = compData.totalShares * currentPrice;
             document.getElementById('currentValue').textContent = formatCurrency(currentTotalValue);
-            
+
             const vestedValue = vesting.vestedShares * currentPrice;
             document.getElementById('vestedValue').textContent = formatCurrency(vestedValue);
         }
@@ -639,18 +698,22 @@
             const savedData = localStorage.getItem('founderCompData');
             if (savedData) {
                 compData = JSON.parse(savedData);
-                
+
                 // Fill form with saved data
                 document.getElementById('ticker').value = compData.ticker;
+                document.getElementById('startDate').value = compData.startDate || '2025-03-15';
                 document.getElementById('vestDate').value = compData.vestDate;
                 document.getElementById('totalShares').value = compData.totalShares;
                 document.getElementById('strikePrice').value = compData.strikePrice;
                 document.getElementById('baseSalary').value = compData.baseSalary || '';
-                
+
                 loadStockData().then(() => {
                     showDashboard();
                     updateDashboard();
                 });
+            } else {
+                // Set default start date for new users
+                document.getElementById('startDate').value = '2025-03-15';
             }
         };
     </script>
