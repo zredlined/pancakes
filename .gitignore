@@ -1,0 +1,7 @@
+# Local tools containing plaintext schedule data — never commit
+tools/
+
+# Any plaintext/decrypted variants of the schedule
+*.plain.json
+*.dec.json
+*.plaintext

@@ -3,13 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Founder Compensation Dashboard</title>
+    <title>Pancakes</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
@@ -20,10 +16,7 @@
             background: radial-gradient(ellipse at top, #1a1a1a 0%, #000 100%);
         }
 
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
+        .container { max-width: 900px; margin: 0 auto; }
 
         .card {
             background: rgba(28, 28, 30, 0.9);
@@ -31,691 +24,958 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 20px;
             padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-            transition: all 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-        }
-
-        .form-group {
             margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
 
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #a1a1a6;
-            font-size: 15px;
-            font-weight: 500;
-            letter-spacing: -0.01em;
+        /* ── Unlock screen ───────────────────────────────────────── */
+        .unlock-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: calc(100vh - 40px);
         }
 
-        input {
+        .unlock-card {
             width: 100%;
-            padding: 16px 20px;
+            max-width: 360px;
+            text-align: center;
+            padding: 48px 32px 40px;
+        }
+
+        .lock-icon { font-size: 48px; margin-bottom: 20px; }
+
+        .unlock-title {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, #007aff 0%, #5856d6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 32px;
+        }
+
+        .pass-wrap { position: relative; margin-bottom: 16px; }
+
+        input[type="password"], input[type="text"] {
+            width: 100%;
+            padding: 16px 48px 16px 20px;
             border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
+            border-radius: 14px;
             background: rgba(0, 0, 0, 0.6);
             color: #fff;
-            font-size: 17px;
-            font-weight: 400;
-            transition: all 0.2s ease;
-            backdrop-filter: blur(10px);
+            font-size: 18px;
+            letter-spacing: 0.06em;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
-        input:focus {
+        input[type="password"]:focus, input[type="text"]:focus {
             outline: none;
             border-color: #007aff;
             box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.2);
-            transform: scale(1.02);
         }
 
-        input::placeholder {
+        input::placeholder { color: #6d6d70; letter-spacing: 0; }
+
+        .eye-btn {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
             color: #6d6d70;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 4px;
         }
 
+        .error-msg {
+            color: #ff453a;
+            font-size: 15px;
+            margin-top: 10px;
+            min-height: 20px;
+        }
+
+        /* ── Shared button ───────────────────────────────────────── */
         .button {
             background: linear-gradient(135deg, #007aff 0%, #0051d0 100%);
             color: #fff;
             border: none;
             padding: 16px 32px;
-            border-radius: 12px;
+            border-radius: 14px;
             font-size: 17px;
             font-weight: 600;
             cursor: pointer;
-            margin-right: 16px;
-            margin-bottom: 16px;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 16px rgba(0, 122, 255, 0.3);
+            width: 100%;
+            transition: opacity 0.2s;
+            box-shadow: 0 4px 16px rgba(0, 122, 255, 0.35);
         }
 
-        .button:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(0, 122, 255, 0.4);
-        }
+        .button:hover { opacity: 0.88; }
+        .button:active { opacity: 0.75; }
 
-        .button:active {
-            transform: translateY(0);
-        }
-
-        .button.secondary {
-            background: linear-gradient(135deg, #48484a 0%, #2c2c2e 100%);
-            box-shadow: 0 4px 16px rgba(72, 72, 74, 0.3);
-        }
-
-        .button.secondary:hover {
-            box-shadow: 0 6px 20px rgba(72, 72, 74, 0.4);
-        }
-
+        /* ── Stock header ────────────────────────────────────────── */
         .stock-header {
-            background: linear-gradient(135deg, #007aff 0%, #5856d6 50%, #af52de 100%);
             text-align: center;
             position: relative;
-            overflow: hidden;
         }
 
         .ticker {
-            font-size: 28px;
+            font-size: 12px;
             font-weight: 700;
+            color: #6d6d70;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
             margin-bottom: 8px;
-            letter-spacing: -0.02em;
         }
 
         .price {
-            font-size: 48px;
+            font-size: 52px;
             font-weight: 800;
-            margin-bottom: 8px;
-            letter-spacing: -0.03em;
-        }
-
-        .change {
-            font-size: 20px;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-
-        .updated {
-            font-size: 15px;
-            opacity: 0.8;
-            font-weight: 500;
-        }
-
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-        }
-
-        .quad-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-        }
-
-        .metric {
-            text-align: center;
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.2s ease;
-        }
-
-        .metric:hover {
-            background: rgba(0, 0, 0, 0.4);
-            transform: translateY(-1px);
-        }
-
-        .metric-value {
-            font-size: 28px;
-            font-weight: 700;
+            letter-spacing: -0.04em;
+            margin-bottom: 6px;
             background: linear-gradient(135deg, #007aff 0%, #5856d6 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 8px;
-            letter-spacing: -0.02em;
         }
 
-        .metric-label {
-            font-size: 15px;
-            color: #a1a1a6;
-            font-weight: 500;
-            letter-spacing: -0.01em;
+        .change { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+        .updated { font-size: 13px; color: #6d6d70; }
+
+        .lock-icon-btn {
+            position: absolute;
+            top: 14px;
+            right: 16px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            width: 34px;
+            height: 34px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
         }
 
-        .progress-section {
-            margin-bottom: 32px;
-        }
+        .lock-icon-btn:hover { background: rgba(255, 255, 255, 0.14); }
 
-        .progress-section:last-child {
-            margin-bottom: 0;
-        }
+        /* ── Hero card ───────────────────────────────────────────── */
+        .hero-card { text-align: center; padding: 32px 24px; }
 
-        .progress-header {
-            margin-bottom: 16px;
-        }
-
-        .progress-title {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 6px;
-            letter-spacing: -0.02em;
-        }
-
-        .progress-subtitle {
+        .hero-label {
             font-size: 16px;
             color: #a1a1a6;
             font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 10px;
+        }
+
+        .hero-value {
+            font-size: 64px;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            line-height: 1;
+            background: linear-gradient(135deg, #30d158 0%, #34c759 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .hero-breakdown {
+            font-size: 15px;
+            color: #6d6d70;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+
+        .hero-rate {
+            display: inline-block;
+            background: rgba(255, 159, 10, 0.12);
+            border: 1px solid rgba(255, 159, 10, 0.25);
+            color: #ff9f0a;
+            font-size: 15px;
+            font-weight: 600;
+            padding: 6px 16px;
+            border-radius: 20px;
+        }
+
+        /* ── Payday card ─────────────────────────────────────────── */
+        .payday-card {
+            border-color: rgba(255, 159, 10, 0.3);
+            background: rgba(255, 159, 10, 0.04);
+        }
+
+        .payday-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .payday-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #ff9f0a;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .payday-date {
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .payday-countdown {
+            font-size: 32px;
+            font-weight: 800;
+            color: #ff9f0a;
+            letter-spacing: -0.02em;
+            text-align: right;
+        }
+
+        .payday-countdown .cd-sub {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #a1a1a6;
+            text-align: right;
+            letter-spacing: 0;
+        }
+
+        .payday-details {
+            font-size: 15px;
+            color: #a1a1a6;
+            margin-top: 10px;
+        }
+
+        /* ── Progress bars ───────────────────────────────────────── */
+        .progress-section { margin-bottom: 28px; }
+        .progress-section:last-child { margin-bottom: 0; }
+
+        .progress-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            letter-spacing: -0.015em;
+        }
+
+        .progress-subtitle {
+            font-size: 14px;
+            color: #a1a1a6;
+            margin-bottom: 12px;
         }
 
         .progress-bar {
-            height: 12px;
+            height: 10px;
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
+            border-radius: 6px;
             overflow: hidden;
-            margin-bottom: 12px;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+            margin-bottom: 8px;
         }
 
         .progress-fill {
             height: 100%;
+            border-radius: 6px;
             transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .progress-fill::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%);
-            animation: progressShine 2s infinite;
-        }
-
-        @keyframes progressShine {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
         }
 
         .orange-gradient {
-            background: linear-gradient(90deg, #ff9500 0%, #ffb340 50%, #ff9500 100%);
-            box-shadow: 0 2px 8px rgba(255, 149, 0, 0.3);
+            background: linear-gradient(90deg, #ff9500 0%, #ffb340 100%);
+            box-shadow: 0 1px 6px rgba(255, 149, 0, 0.4);
         }
 
         .blue-gradient {
-            background: linear-gradient(90deg, #007aff 0%, #5856d6 50%, #af52de 100%);
-            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+            background: linear-gradient(90deg, #007aff 0%, #5856d6 100%);
+            box-shadow: 0 1px 6px rgba(0, 122, 255, 0.35);
         }
 
-        .progress-text {
-            font-size: 16px;
-            color: #a1a1a6;
-            font-weight: 500;
+        .red-green-gradient {
+            background: linear-gradient(90deg, #ff6b6b 0%, #ffa726 40%, #30d158 100%);
         }
 
-        .hidden {
-            display: none;
+        .progress-text { font-size: 14px; color: #a1a1a6; }
+
+        /* ── Stats grid ──────────────────────────────────────────── */
+        .three-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
         }
 
-        h1 {
-            font-size: 36px;
-            font-weight: 800;
+        .metric {
+            text-align: center;
+            padding: 20px 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .metric-value {
+            font-size: 26px;
+            font-weight: 700;
             background: linear-gradient(135deg, #007aff 0%, #5856d6 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            text-align: center;
-            margin-bottom: 32px;
-            letter-spacing: -0.03em;
-        }
-
-        h3 {
-            font-size: 22px;
-            font-weight: 700;
-            margin-bottom: 20px;
+            margin-bottom: 6px;
             letter-spacing: -0.02em;
         }
 
-        @media (max-width: 768px) {
-            .metrics-grid, .quad-grid {
-                grid-template-columns: 1fr;
-            }
+        /* Deal value: slightly larger, purple — feels premium */
+        .metric-value.deal {
+            font-size: 30px;
+            background: linear-gradient(135deg, #bf5af2 0%, #5856d6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
 
-            .price {
-                font-size: 36px;
-            }
+        /* NVDA appreciation: green when up, red when down */
+        .metric-value.pos {
+            background: linear-gradient(135deg, #30d158 0%, #34c759 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
 
-            .metric-value {
-                font-size: 24px;
-            }
+        .metric-value.neg {
+            background: linear-gradient(135deg, #ff453a 0%, #ff6b6b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
 
-            .container {
-                padding: 0 16px;
-            }
+        .metric-label {
+            font-size: 13px;
+            color: #a1a1a6;
+            font-weight: 500;
+        }
 
-            .card {
-                padding: 20px;
-            }
+        /* ── Payment schedule list ───────────────────────────────── */
+        details > summary {
+            list-style: none;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+
+        details > summary::-webkit-details-marker { display: none; }
+
+        details > summary::after {
+            content: '⌄';
+            font-size: 22px;
+            color: #6d6d70;
+            transition: transform 0.2s;
+        }
+
+        details[open] > summary::after { transform: rotate(180deg); }
+
+        .schedule-summary-text {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .schedule-summary-text h3 {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .schedule-count {
+            font-size: 14px;
+            color: #6d6d70;
+            font-weight: 500;
+        }
+
+        .payment-list { margin-top: 20px; }
+
+        .payment-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 12px 8px;
+            border-radius: 10px;
+            gap: 10px;
+            transition: background 0.15s;
+        }
+
+        .payment-item:hover { background: rgba(255,255,255,0.04); }
+
+        .item-past { opacity: 0.45; }
+
+        .item-next {
+            background: rgba(255, 159, 10, 0.07) !important;
+            border: 1px solid rgba(255, 159, 10, 0.2);
+        }
+
+        /* Escrow event: gold treatment */
+        .item-escrow {
+            background: rgba(255, 214, 10, 0.05) !important;
+            border: 1px solid rgba(255, 214, 10, 0.2);
+            padding: 14px 12px !important;
+            margin: 2px 0;
+        }
+
+        .item-escrow .pi-value { color: #ffd60a; font-size: 16px; }
+        .item-escrow .pi-star  { font-size: 16px; }
+
+        .pi-icon {
+            width: 22px;
+            flex-shrink: 0;
+            text-align: center;
+            margin-top: 1px;
+            font-size: 14px;
+        }
+
+        .pi-check { color: #30d158; }
+        .pi-star  { color: #ffd60a; }
+        .pi-next  { color: #ff9f0a; font-size: 11px; }
+        .pi-dot   { color: #48484a; font-size: 20px; line-height: 0.85; }
+
+        .pi-info { flex: 1; min-width: 0; }
+
+        .pi-row1 {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 2px;
+        }
+
+        .pi-date {
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        .pi-qlabel { font-size: 11px; color: #6d6d70; font-weight: 500; }
+
+        .pi-row2 { font-size: 13px; color: #8e8e93; }
+
+        .pi-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #8e8e93;
+            white-space: nowrap;
+            text-align: right;
+            padding-top: 2px;
+        }
+
+        .item-next .pi-value { color: #fff; font-size: 16px; }
+
+        .badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+
+        .badge-days   { background: rgba(255, 159, 10, 0.15); color: #ff9f0a; }
+        .badge-escrow { background: rgba(255, 214, 10, 0.12); color: #ffd60a; }
+
+        /* ── Hidden utility ──────────────────────────────────────── */
+        .hidden { display: none !important; }
+
+        /* ── Responsive ──────────────────────────────────────────── */
+        @media (max-width: 680px) {
+            .three-grid { grid-template-columns: 1fr; }
+            .hero-value { font-size: 52px; }
+            .price      { font-size: 40px; }
         }
 
         @media (max-width: 480px) {
-            .quad-grid {
-                grid-template-columns: 1fr;
-            }
+            body        { padding: 12px; }
+            .card       { padding: 18px; margin-bottom: 14px; }
+            .hero-value { font-size: 44px; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Setup Form -->
-        <div id="setupForm">
-            <div class="card">
-                <h1 style="margin-bottom: 24px; text-align: center;">Founder Compensation Dashboard</h1>
+<div class="container">
 
-                <div class="form-group">
-                    <label for="ticker">Stock Ticker Symbol</label>
-                    <input type="text" id="ticker" placeholder="e.g., NVDA">
+    <!-- ── Unlock screen ────────────────────────────────────────── -->
+    <div id="unlockScreen">
+        <div class="unlock-wrap">
+            <div class="card unlock-card">
+                <div class="lock-icon">🥞</div>
+                <div class="unlock-title">Pancakes</div>
+                <div class="pass-wrap">
+                    <input type="password" id="passInput" placeholder="Password"
+                           autocomplete="current-password"
+                           onkeydown="if(event.key==='Enter') unlock()">
+                    <button class="eye-btn" onclick="toggleEye(this)" type="button" aria-label="Show password">👁</button>
                 </div>
-
-                <div class="form-group">
-                    <label for="startDate">Start Date</label>
-                    <input type="date" id="startDate">
-                </div>
-
-                <div class="form-group">
-                    <label for="vestDate">First Vest Date</label>
-                    <input type="date" id="vestDate">
-                </div>
-
-                <div class="form-group">
-                    <label for="totalShares">Total Shares Granted</label>
-                    <input type="number" id="totalShares" placeholder="e.g., 100000">
-                </div>
-
-                <div class="form-group">
-                    <label for="strikePrice">Conversion/Strike Price</label>
-                    <input type="number" id="strikePrice" step="0.01" placeholder="e.g., 127.93">
-                </div>
-
-                <div class="form-group">
-                    <label for="baseSalary">Base Salary (optional)</label>
-                    <input type="number" id="baseSalary" placeholder="e.g., 200000">
-                </div>
-
-                <button class="button" onclick="createDashboard()">Create Dashboard</button>
-                <button class="button secondary" onclick="loadSampleData()">Load Sample Data</button>
+                <button class="button" onclick="unlock()" id="unlockBtn">Unlock</button>
+                <div class="error-msg hidden" id="unlockError">Incorrect password — try again</div>
             </div>
-        </div>
-
-        <!-- Dashboard -->
-        <div id="dashboard" class="hidden">
-            <!-- Stock Price Header -->
-            <div class="card stock-header">
-                <div class="ticker" id="dashTicker"></div>
-                <div class="price" id="stockPrice"></div>
-                <div class="change" id="priceChange"></div>
-                <div class="updated" id="lastUpdated"></div>
-            </div>
-
-            <!-- Top Metrics -->
-            <div class="metrics-grid">
-                <div class="card">
-                    <div class="metric">
-                        <div class="metric-value" id="dailyComp"></div>
-                        <div class="metric-label">Daily Compensation</div>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="metric">
-                        <div class="metric-value" id="stockAppreciation"></div>
-                        <div class="metric-label">Stock Appreciation</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Vesting Progress -->
-            <div class="card">
-                <div class="progress-section">
-                    <div class="progress-header">
-                        <div class="progress-title">Current Quarter Progress</div>
-                        <div class="progress-subtitle" id="quarterDays"></div>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill orange-gradient" id="quarterProgress"></div>
-                    </div>
-                    <div class="progress-text" id="nextVest"></div>
-                </div>
-
-                <div class="progress-section">
-                    <div class="progress-header">
-                        <div class="progress-title">Escrow Period Progress</div>
-                        <div class="progress-subtitle" id="escrowDays"></div>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="escrowProgress" style="background: linear-gradient(90deg, #ff6b6b 0%, #ffa726 50%, #66bb6a 100%); box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);"></div>
-                    </div>
-                    <div class="progress-text" id="escrowRelease"></div>
-                </div>
-
-                <div class="progress-section">
-                    <div class="progress-header">
-                        <div class="progress-title">Overall Vesting Progress</div>
-                        <div class="progress-subtitle">4-year schedule</div>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill blue-gradient" id="overallProgress"></div>
-                    </div>
-                    <div class="progress-text" id="overallText"></div>
-                </div>
-            </div>
-
-            <!-- Quarterly Details -->
-            <div class="card">
-                <h3 style="margin-bottom: 16px;">Quarterly Details</h3>
-                <div class="metrics-grid">
-                    <div class="metric">
-                        <div class="metric-value" id="sharesThisQuarter"></div>
-                        <div class="metric-label">Shares Vesting This Quarter</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-value" id="quarterValue"></div>
-                        <div class="metric-label">Quarter Accumulated Value</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Overall Portfolio -->
-            <div class="card">
-                <h3 style="margin-bottom: 16px;">Overall Portfolio</h3>
-                <div class="quad-grid">
-                    <div class="metric">
-                        <div class="metric-value" id="originalValue"></div>
-                        <div class="metric-label">Original Grant Value</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-value" id="currentValue"></div>
-                        <div class="metric-label">Current Total Value</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-value" id="vestedValue"></div>
-                        <div class="metric-label">Total Value of Shares Vested</div>
-                    </div>
-                </div>
-            </div>
-
-            <button class="button secondary" onclick="editSettings()">Edit Settings</button>
         </div>
     </div>
 
-    <script>
-        let stockData = { price: 0, timestamp: Date.now() / 1000 };
-        let compData = {};
+    <!-- ── Dashboard ────────────────────────────────────────────── -->
+    <div id="dashboard" class="hidden">
 
-        // Load sample data
-        function loadSampleData() {
-            const futureDate = new Date();
-            futureDate.setDate(futureDate.getDate() + 30);
+        <!-- Stock header (lock button lives here now) -->
+        <div class="card stock-header">
+            <button class="lock-icon-btn" onclick="lock()" title="Lock">🔒</button>
+            <div class="ticker">NVDA</div>
+            <div class="price" id="stockPrice">—</div>
+            <div class="change" id="priceChange"></div>
+            <div class="updated" id="lastUpdated"></div>
+        </div>
 
-            // Default start date to March 15, 2025
-            const defaultStartDate = new Date('2025-03-15');
+        <!-- Hero: total earned -->
+        <div class="card hero-card">
+            <div class="hero-label">Earned to date</div>
+            <div class="hero-value" id="totalEarned">—</div>
+            <div class="hero-breakdown" id="heroBreakdown"></div>
+            <span class="hero-rate" id="dailyRate"></span>
+        </div>
 
-            document.getElementById('ticker').value = 'NVDA';
-            document.getElementById('startDate').value = defaultStartDate.toISOString().split('T')[0];
-            document.getElementById('vestDate').value = futureDate.toISOString().split('T')[0];
-            document.getElementById('totalShares').value = '100000';
-            document.getElementById('strikePrice').value = '127.93';
-            document.getElementById('baseSalary').value = '200000';
+        <!-- Next payday -->
+        <div class="card payday-card" id="paydayCard">
+            <div class="payday-header">
+                <div>
+                    <div class="payday-label">Next Payday</div>
+                    <div class="payday-date" id="nextPayDate">—</div>
+                </div>
+                <div class="payday-countdown">
+                    <span id="nextPayDays">—</span>
+                    <span class="cd-sub">days away</span>
+                </div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill orange-gradient" id="quarterProgress" style="width:0%"></div>
+            </div>
+            <div class="payday-details" id="nextPayDetails"></div>
+        </div>
+
+        <!-- Progress: escrow + overall vesting in one card -->
+        <div class="card">
+            <div class="progress-section" id="escrowSection">
+                <div class="progress-title">Escrow Release</div>
+                <div class="progress-subtitle" id="escrowSub"></div>
+                <div class="progress-bar">
+                    <div class="progress-fill red-green-gradient" id="escrowProgress" style="width:0%"></div>
+                </div>
+                <div class="progress-text" id="escrowText"></div>
+            </div>
+            <div class="progress-section">
+                <div class="progress-title">Vesting Progress</div>
+                <div class="progress-subtitle">4-year schedule</div>
+                <div class="progress-bar">
+                    <div class="progress-fill blue-gradient" id="overallProgress" style="width:0%"></div>
+                </div>
+                <div class="progress-text" id="overallText"></div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="card">
+            <div class="three-grid">
+                <div class="metric">
+                    <div class="metric-value deal" id="totalDealValue">—</div>
+                    <div class="metric-label">Total deal value today</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="remainingValue">—</div>
+                    <div class="metric-label">Still to vest</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="stockAppreciation">—</div>
+                    <div class="metric-label">NVDA appreciation</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment schedule -->
+        <div class="card">
+            <details>
+                <summary>
+                    <div class="schedule-summary-text">
+                        <h3>Payment Schedule</h3>
+                        <span class="schedule-count" id="scheduleCount"></span>
+                    </div>
+                </summary>
+                <div class="payment-list" id="paymentList"></div>
+            </details>
+        </div>
+
+    </div>
+
+</div>
+<script>
+'use strict';
+
+// ── Constants ────────────────────────────────────────────────────────────────
+const PASS_KEY    = '_pv1';
+const CLOSE_DATE  = new Date(2025, 2, 14, 12, 0, 0);
+const ESCROW_DATE = new Date(2026, 10, 12, 12, 0, 0);
+
+// ── State ────────────────────────────────────────────────────────────────────
+let scheduleBlob  = null;
+let schedule      = null;
+let stockData     = { price: 0, timestamp: Date.now() / 1000 };
+let heroAnimated  = false;
+
+// ── Crypto helpers ───────────────────────────────────────────────────────────
+function fromHex(hex) {
+    return new Uint8Array(hex.match(/.{2}/g).map(b => parseInt(b, 16)));
+}
+
+async function decrypt(blob, password) {
+    const enc  = new TextEncoder();
+    const iv   = fromHex(blob.i);
+    const salt = fromHex(blob.l);
+    const ct   = Uint8Array.from(atob(blob.d), c => c.charCodeAt(0));
+    const km   = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+    const key  = await crypto.subtle.deriveKey(
+        { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+        km, { name: 'AES-GCM', length: 256 }, false, ['decrypt']
+    );
+    const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+    return JSON.parse(new TextDecoder().decode(pt));
+}
+
+// ── Date helpers ─────────────────────────────────────────────────────────────
+function parseDate(str) {
+    const [y, m, d] = str.split('-').map(Number);
+    return new Date(y, m - 1, d, 12, 0, 0);
+}
+
+function today() {
+    const n = new Date();
+    return new Date(n.getFullYear(), n.getMonth(), n.getDate(), 12, 0, 0);
+}
+
+// ── Format helpers ───────────────────────────────────────────────────────────
+function fmtM(n) {
+    if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
+    if (n >= 1e3) return '$' + Math.round(n).toLocaleString();
+    return '$' + n.toFixed(0);
+}
+
+function fmtFull(n) { return '$' + Math.round(n).toLocaleString(); }
+
+function fmtDate(d) {
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function getQL(idx) { return `Y${Math.floor(idx / 4) + 1} Q${(idx % 4) + 1}`; }
+
+// ── Hero count-up animation ───────────────────────────────────────────────────
+function animateHero(target) {
+    const el       = document.getElementById('totalEarned');
+    const duration = 1200;
+    const t0       = performance.now();
+
+    (function tick(now) {
+        const t      = Math.min((now - t0) / duration, 1);
+        const eased  = 1 - Math.pow(1 - t, 3); // ease-out cubic
+        el.textContent = fmtM(target * eased);
+        if (t < 1) requestAnimationFrame(tick);
+    })(t0);
+}
+
+// ── Compute status ────────────────────────────────────────────────────────────
+function getStatus(sch, price) {
+    const now      = today();
+    const events   = sch.ev;
+    const lastDate = parseDate(events[events.length - 1].d);
+
+    const pastEvents   = events.filter(e => parseDate(e.d) <= now);
+    const futureEvents = events.filter(e => parseDate(e.d) > now);
+    const nextEvent    = futureEvents[0] || null;
+    const prevEvent    = pastEvents[pastEvents.length - 1] || null;
+
+    const issuedShares = pastEvents.reduce((s, e) => s + e.s, 0);
+    const pastCash     = pastEvents.reduce((s, e) => s + e.c, 0);
+    const totalEarned  = sch.k + issuedShares * price + pastCash;
+
+    const remShares = futureEvents.reduce((s, e) => s + e.s, 0);
+    const remCash   = futureEvents.reduce((s, e) => s + e.c, 0);
+    const remValue  = remShares * price + remCash;
+
+    const daysToNext = nextEvent ? Math.ceil((parseDate(nextEvent.d) - now) / 86400000) : 0;
+    const nextValue  = nextEvent ? nextEvent.s * price + nextEvent.c : 0;
+
+    let qPct = 0, daysSincePrev = 0, qLen = 0;
+    if (prevEvent && nextEvent) {
+        const pDate   = parseDate(prevEvent.d);
+        const nDate   = parseDate(nextEvent.d);
+        daysSincePrev = Math.max(0, Math.floor((now - pDate) / 86400000));
+        qLen          = Math.floor((nDate - pDate) / 86400000);
+        qPct          = Math.min(daysSincePrev / qLen, 1);
+    } else if (!nextEvent) {
+        qPct = 1;
+    }
+
+    const totalDays   = Math.floor((lastDate - CLOSE_DATE) / 86400000);
+    const elapsedDays = Math.max(0, Math.floor((now - CLOSE_DATE) / 86400000));
+    const overallPct  = Math.min(elapsedDays / totalDays, 1);
+
+    const escrowDone   = now >= ESCROW_DATE;
+    const escrowTotal  = Math.floor((ESCROW_DATE - CLOSE_DATE) / 86400000);
+    const escrowElap   = Math.max(0, Math.floor((now - CLOSE_DATE) / 86400000));
+    const escrowPct    = Math.min(escrowElap / escrowTotal, 1);
+    const daysToEscrow = Math.max(0, Math.ceil((ESCROW_DATE - now) / 86400000));
+
+    const remDays   = Math.max(1, Math.ceil((lastDate - now) / 86400000));
+    const dailyRate = remValue / remDays;
+
+    const allShares = events.reduce((s, e) => s + e.s, 0);
+    const allCash   = events.reduce((s, e) => s + e.c, 0);
+    const dealValue = allShares * price + sch.k + allCash;
+
+    const appreciation = ((price - sch.p) / sch.p) * 100;
+
+    return {
+        totalEarned, issuedShares, pastCash,
+        nextEvent, daysToNext, nextValue, prevEvent,
+        qPct, daysSincePrev, qLen,
+        overallPct, elapsedDays, totalDays,
+        escrowDone, escrowPct, daysToEscrow,
+        dailyRate, remValue,
+        dealValue, appreciation,
+        payCount: pastEvents.length,
+        totalCount: events.length
+    };
+}
+
+// ── Render ───────────────────────────────────────────────────────────────────
+function render() {
+    if (!schedule) return;
+    const price = stockData.price;
+    const s     = getStatus(schedule, price);
+    const ap    = s.appreciation;
+
+    // Stock header
+    document.getElementById('stockPrice').textContent = fmtFull(price);
+    const changeEl = document.getElementById('priceChange');
+    changeEl.textContent = `${ap >= 0 ? '↑' : '↓'} ${ap >= 0 ? '+' : ''}${ap.toFixed(2)}% from acquisition`;
+    changeEl.style.color = ap >= 0 ? '#30d158' : '#ff453a';
+    const hrsAgo = Math.floor((Date.now() / 1000 - stockData.timestamp) / 3600);
+    document.getElementById('lastUpdated').textContent =
+        hrsAgo < 1 ? 'Updated recently' : `Updated ${hrsAgo}h ago`;
+
+    // Hero (animate on first load only)
+    if (!heroAnimated) {
+        heroAnimated = true;
+        animateHero(s.totalEarned);
+    } else {
+        document.getElementById('totalEarned').textContent = fmtM(s.totalEarned);
+    }
+    document.getElementById('heroBreakdown').textContent =
+        `$${(schedule.k / 1e6).toFixed(1)}M cash at close  ·  ${s.issuedShares.toLocaleString()} shares issued`;
+    document.getElementById('dailyRate').textContent =
+        `${fmtFull(Math.round(s.dailyRate))} vesting per day`;
+
+    // Next payday
+    if (s.nextEvent) {
+        const nd = parseDate(s.nextEvent.d);
+        document.getElementById('nextPayDate').textContent = fmtDate(nd);
+        document.getElementById('nextPayDays').textContent = s.daysToNext;
+        document.getElementById('quarterProgress').style.width = `${s.qPct * 100}%`;
+
+        let details = `${s.nextEvent.s.toLocaleString()} shares`;
+        if (s.nextEvent.c > 0) details += ` + ${fmtM(s.nextEvent.c)} cash`;
+        details += `  ·  ~${fmtFull(Math.round(s.nextValue))} at current price`;
+        document.getElementById('nextPayDetails').textContent = details;
+        document.getElementById('paydayCard').classList.remove('hidden');
+    } else {
+        document.getElementById('paydayCard').classList.add('hidden');
+    }
+
+    // Escrow (hide the whole section once released)
+    if (!s.escrowDone) {
+        document.getElementById('escrowSub').textContent = fmtDate(ESCROW_DATE);
+        document.getElementById('escrowProgress').style.width = `${s.escrowPct * 100}%`;
+        document.getElementById('escrowText').textContent =
+            `${Math.round(s.escrowPct * 100)}%  ·  ${s.daysToEscrow} days remaining`;
+        document.getElementById('escrowSection').classList.remove('hidden');
+    } else {
+        document.getElementById('escrowSection').classList.add('hidden');
+    }
+
+    // Overall vesting
+    document.getElementById('overallProgress').style.width = `${s.overallPct * 100}%`;
+    document.getElementById('overallText').textContent =
+        `${Math.round(s.overallPct * 100)}%  ·  ${s.payCount} of ${s.totalCount} vesting dates`;
+
+    // Stats
+    document.getElementById('totalDealValue').textContent = fmtM(s.dealValue);
+    document.getElementById('remainingValue').textContent = fmtM(s.remValue);
+
+    const apEl = document.getElementById('stockAppreciation');
+    apEl.className = 'metric-value ' + (ap >= 0 ? 'pos' : 'neg');
+    apEl.textContent = `${ap >= 0 ? '+' : ''}${ap.toFixed(1)}%`;
+
+    // Schedule header
+    document.getElementById('scheduleCount').textContent =
+        `${s.payCount} of ${s.totalCount} complete`;
+
+    renderPaymentList();
+}
+
+function renderPaymentList() {
+    const now    = today();
+    const price  = stockData.price;
+    const events = schedule.ev;
+    let nextFound = false;
+
+    const html = events.map((ev, idx) => {
+        const date     = parseDate(ev.d);
+        const isPast   = date <= now;
+        const isNext   = !isPast && !nextFound;
+        if (isNext) nextFound = true;
+        const isEscrow = ev.c > 0;
+        const totalVal = ev.s * price + ev.c;
+        const daysTo   = Math.ceil((date - now) / 86400000);
+
+        let cls = 'payment-item';
+        if (isPast)             cls += ' item-past';
+        else if (isNext)        cls += ' item-next';
+        else if (isEscrow)      cls += ' item-escrow';
+
+        let icon;
+        if (isPast)        icon = `<span class="pi-check">✓</span>`;
+        else if (isEscrow) icon = `<span class="pi-star">★</span>`;
+        else if (isNext)   icon = `<span class="pi-next">▶</span>`;
+        else               icon = `<span class="pi-dot">·</span>`;
+
+        let amtStr;
+        if (ev.s === 0 && ev.c === 0) {
+            amtStr = 'shares held for escrow release';
+        } else if (ev.c > 0) {
+            amtStr = `${ev.s.toLocaleString()} shares + ${fmtM(ev.c)} cash`;
+        } else {
+            amtStr = `${ev.s.toLocaleString()} shares`;
         }
 
-        // Create dashboard
-        function createDashboard() {
-            const ticker = document.getElementById('ticker').value;
-            const startDate = document.getElementById('startDate').value;
-            const vestDate = document.getElementById('vestDate').value;
-            const totalShares = parseInt(document.getElementById('totalShares').value);
-            const strikePrice = parseFloat(document.getElementById('strikePrice').value);
-            const baseSalary = parseFloat(document.getElementById('baseSalary').value) || 0;
+        const valStr  = totalVal > 0 ? fmtM(totalVal) : '';
+        const daysBdg = !isPast && daysTo > 0
+            ? `<span class="badge badge-days">in ${daysTo}d</span>` : '';
+        const escrBdg = isEscrow
+            ? `<span class="badge badge-escrow">Escrow Release</span>` : '';
 
-            if (!ticker || !startDate || !vestDate || !totalShares || !strikePrice) {
-                alert('Please fill in all required fields');
-                return;
-            }
+        return `<div class="${cls}">
+            <div class="pi-icon">${icon}</div>
+            <div class="pi-info">
+                <div class="pi-row1">
+                    <span class="pi-date">${fmtDate(date)}</span>
+                    <span class="pi-qlabel">${getQL(idx)}</span>
+                    ${escrBdg}${daysBdg}
+                </div>
+                <div class="pi-row2">${amtStr}</div>
+            </div>
+            <div class="pi-value">${valStr}</div>
+        </div>`;
+    }).join('');
 
-            compData = { ticker, startDate, vestDate, totalShares, strikePrice, baseSalary };
-            localStorage.setItem('founderCompData', JSON.stringify(compData));
+    document.getElementById('paymentList').innerHTML = html;
+}
 
-            loadStockData().then(() => {
-                showDashboard();
-                updateDashboard();
-            });
+// ── UI flow ──────────────────────────────────────────────────────────────────
+function showUnlock(errorMsg) {
+    document.getElementById('dashboard').classList.add('hidden');
+    document.getElementById('unlockScreen').classList.remove('hidden');
+    if (errorMsg) {
+        document.getElementById('unlockError').textContent = errorMsg;
+        document.getElementById('unlockError').classList.remove('hidden');
+    } else {
+        document.getElementById('unlockError').classList.add('hidden');
+    }
+    setTimeout(() => document.getElementById('passInput').focus(), 50);
+}
+
+function showDashboard() {
+    document.getElementById('unlockScreen').classList.add('hidden');
+    document.getElementById('dashboard').classList.remove('hidden');
+}
+
+async function unlock() {
+    const btn  = document.getElementById('unlockBtn');
+    const pass = document.getElementById('passInput').value;
+    if (!pass) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Unlocking…';
+
+    try {
+        schedule = await decrypt(scheduleBlob, pass);
+        localStorage.setItem(PASS_KEY, pass);
+        showDashboard();
+        render();
+    } catch {
+        document.getElementById('passInput').value = '';
+        document.getElementById('passInput').focus();
+        document.getElementById('unlockError').classList.remove('hidden');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Unlock';
+    }
+}
+
+function lock() {
+    localStorage.removeItem(PASS_KEY);
+    schedule     = null;
+    heroAnimated = false;
+    document.getElementById('passInput').value = '';
+    showUnlock();
+}
+
+function toggleEye(btn) {
+    const inp = document.getElementById('passInput');
+    if (inp.type === 'password') {
+        inp.type = 'text';
+        btn.textContent = '🙈';
+    } else {
+        inp.type = 'password';
+        btn.textContent = '👁';
+    }
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+async function init() {
+    try {
+        const r = await fetch('data/stock.json');
+        stockData = await r.json();
+    } catch { /* */ }
+
+    try {
+        const r = await fetch('data/s.json');
+        scheduleBlob = await r.json();
+    } catch {
+        showUnlock('Could not load schedule data — are you running on a server?');
+        return;
+    }
+
+    const cached = localStorage.getItem(PASS_KEY);
+    if (cached) {
+        try {
+            schedule = await decrypt(scheduleBlob, cached);
+            showDashboard();
+            render();
+            return;
+        } catch {
+            localStorage.removeItem(PASS_KEY);
         }
+    }
 
-        // Edit settings
-        function editSettings() {
-            document.getElementById('dashboard').classList.add('hidden');
-            document.getElementById('setupForm').classList.remove('hidden');
-        }
+    showUnlock();
+}
 
-        // Load stock data
-        async function loadStockData() {
-            try {
-                const response = await fetch('data/stock.json');
-                stockData = await response.json();
-            } catch (error) {
-                console.error('Failed to load stock data:', error);
-                stockData = { price: compData.strikePrice, timestamp: Date.now() / 1000 };
-            }
-        }
-
-        // Show dashboard
-        function showDashboard() {
-            document.getElementById('setupForm').classList.add('hidden');
-            document.getElementById('dashboard').classList.remove('hidden');
-        }
-
-        // Format number with commas
-        function formatNumber(num) {
-            return num.toLocaleString();
-        }
-
-        // Format currency
-        function formatCurrency(num) {
-            return '$' + num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        }
-
-        // Calculate escrow progress
-        function calculateEscrow() {
-            const now = new Date();
-            const startDate = new Date(compData.startDate);
-            const escrowMonths = 18;
-            const escrowRelease = new Date(startDate);
-            escrowRelease.setMonth(escrowRelease.getMonth() + escrowMonths);
-
-            const totalEscrowDays = (escrowRelease - startDate) / (1000 * 60 * 60 * 24);
-            const daysSinceStart = Math.max(0, (now - startDate) / (1000 * 60 * 60 * 24));
-            const daysUntilRelease = Math.max(0, (escrowRelease - now) / (1000 * 60 * 60 * 24));
-
-            const escrowProgress = Math.min(daysSinceStart / totalEscrowDays, 1);
-
-            return {
-                escrowRelease,
-                totalEscrowDays: Math.ceil(totalEscrowDays),
-                daysSinceStart: Math.floor(daysSinceStart),
-                daysUntilRelease: Math.ceil(daysUntilRelease),
-                escrowProgress,
-                isComplete: now >= escrowRelease
-            };
-        }
-        // Calculate vesting progress
-        function calculateVesting() {
-            const now = new Date();
-            const firstVest = new Date(compData.vestDate);
-
-            // DEBUG: Log the key dates and calculations
-            console.log('=== VESTING DEBUG ===');
-            console.log('Today:', now.toISOString().split('T')[0]);
-            console.log('First Vest Date:', firstVest.toISOString().split('T')[0]);
-
-            // Calculate the start of the vesting schedule (91.25 days before first vest)
-            const quarterLength = 91.25;
-            const vestingStart = new Date(firstVest.getTime() - quarterLength * 24 * 60 * 60 * 1000);
-
-            const daysSinceStart = Math.max(0, (now - vestingStart) / (1000 * 60 * 60 * 24));
-            const daysSinceFirst = (now - firstVest) / (1000 * 60 * 60 * 24);
-
-            console.log('Vesting Start Date:', vestingStart.toISOString().split('T')[0]);
-            console.log('Days since vesting start:', daysSinceStart);
-            console.log('Days since first vest:', daysSinceFirst);
-            console.log('Quarter length:', quarterLength);
-
-            const totalQuarters = 16;
-            const sharesPerVest = compData.totalShares / totalQuarters;
-
-            // Completed vests (only count if we've passed the first vest date)
-            const completedVests = Math.max(0, Math.floor(daysSinceFirst / quarterLength) + 1);
-            const vestedShares = daysSinceFirst >= 0 ? Math.min(completedVests * sharesPerVest, compData.totalShares) : 0;
-
-            // Current quarter progress (always relative to vesting start)
-            const currentQuarter = Math.floor(daysSinceStart / quarterLength);
-            const daysIntoQuarter = daysSinceStart % quarterLength;
-            const quarterProgress = Math.min(daysIntoQuarter / quarterLength, 1);
-
-            console.log('Current quarter:', currentQuarter);
-            console.log('Days into quarter:', daysIntoQuarter);
-            console.log('Quarter progress:', quarterProgress);
-            console.log('Completed vests:', completedVests);
-            console.log('Vested shares:', vestedShares);
-
-            // Next vest date
-            const nextVestDate = new Date(firstVest.getTime() + Math.max(0, Math.floor(daysSinceFirst / quarterLength) + 1) * quarterLength * 24 * 60 * 60 * 1000);
-            const daysToNextVest = Math.ceil((nextVestDate - now) / (1000 * 60 * 60 * 24));
-
-            console.log('Next vest date:', nextVestDate.toISOString().split('T')[0]);
-            console.log('Days to next vest:', daysToNextVest);
-
-            // Overall progress
-            const totalDays = totalQuarters * quarterLength;
-            const overallProgress = Math.min(daysSinceStart / totalDays, 1);
-
-            console.log('Overall progress:', overallProgress);
-            console.log('==================');
-
-            return {
-                vestedShares,
-                quarterProgress,
-                overallProgress,
-                daysIntoQuarter,
-                daysToNextVest: Math.max(0, daysToNextVest),
-                nextVestDate,
-                sharesPerVest,
-                completedVests: Math.max(0, completedVests),
-                totalDays: Math.ceil(totalDays - daysSinceStart)
-            };
-        }
-
-        // Update dashboard
-        function updateDashboard() {
-            const vesting = calculateVesting();
-            const escrow = calculateEscrow();
-            const currentPrice = stockData.price;
-            const priceChange = ((currentPrice - compData.strikePrice) / compData.strikePrice) * 100;
-
-            // Stock header
-            document.getElementById('dashTicker').textContent = compData.ticker;
-            document.getElementById('stockPrice').textContent = formatCurrency(currentPrice);
-            document.getElementById('priceChange').textContent =
-                `${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}% from acquisition`;
-
-            const hoursAgo = Math.floor((Date.now() / 1000 - stockData.timestamp) / 3600);
-            document.getElementById('lastUpdated').textContent = `Updated ${hoursAgo}h ago`;
-
-            // Top metrics
-            const totalEquityValue = compData.totalShares * currentPrice;
-            const totalComp = totalEquityValue + (compData.baseSalary * 4);
-            const dailyComp = totalComp / 1461; // 4 years in days
-
-            document.getElementById('dailyComp').textContent = formatCurrency(dailyComp);
-
-            // Stock appreciation with trending indicator
-            const trendingUp = priceChange >= 0;
-            const trendSymbol = trendingUp ? '↗' : '↘';
-            const trendText = trendingUp ? 'trending up' : 'trending down';
-            document.getElementById('stockAppreciation').textContent =
-                `${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(1)}% ${trendSymbol} ${trendText}`;
-
-            // Vesting progress - consistent format: X of Y days, Z%, N days remaining
-            const quarterDaysTotal = 91;
-            const quarterPercent = Math.round(vesting.quarterProgress * 100);
-            document.getElementById('quarterDays').textContent =
-                `${Math.floor(vesting.daysIntoQuarter)} of ${quarterDaysTotal} days, ${quarterPercent}%, ${vesting.daysToNextVest} days remaining`;
-            document.getElementById('quarterProgress').style.width = `${vesting.quarterProgress * 100}%`;
-            document.getElementById('nextVest').textContent =
-                `Next vest: ${vesting.nextVestDate.toLocaleDateString()}`;
-
-            // Escrow progress - consistent format
-            const escrowPercent = Math.round(escrow.escrowProgress * 100);
-            document.getElementById('escrowDays').textContent =
-                `${escrow.daysSinceStart} of ${escrow.totalEscrowDays} days, ${escrowPercent}%, ${escrow.daysUntilRelease} days remaining`;
-            document.getElementById('escrowProgress').style.width = `${escrow.escrowProgress * 100}%`;
-            document.getElementById('escrowRelease').textContent =
-                escrow.isComplete ? 'Escrow released!' : `Escrow release: ${escrow.escrowRelease.toLocaleDateString()}`;
-
-            // Overall vesting progress - consistent format
-            const overallPercent = Math.round(vesting.overallProgress * 100);
-            const totalVestingDays = Math.ceil(16 * 91.25);
-            const daysSinceVestingStart = Math.max(0, Math.floor((new Date() - new Date(new Date(compData.vestDate).getTime() - 91.25 * 24 * 60 * 60 * 1000)) / (1000 * 60 * 60 * 24)));
-            document.getElementById('overallProgress').style.width = `${vesting.overallProgress * 100}%`;
-            document.getElementById('overallText').textContent =
-                `${daysSinceVestingStart} of ${totalVestingDays} days, ${overallPercent}%, ${formatNumber(vesting.vestedShares)} shares vested`;
-
-            // Quarterly details
-            document.getElementById('sharesThisQuarter').textContent = formatNumber(Math.floor(vesting.sharesPerVest));
-
-            const quarterAccumValue = vesting.sharesPerVest * currentPrice * vesting.quarterProgress;
-            document.getElementById('quarterValue').textContent = formatCurrency(quarterAccumValue);
-
-            // Overall portfolio
-            const originalValue = compData.totalShares * compData.strikePrice;
-            document.getElementById('originalValue').textContent = formatCurrency(originalValue);
-
-            const currentTotalValue = compData.totalShares * currentPrice;
-            document.getElementById('currentValue').textContent = formatCurrency(currentTotalValue);
-
-            const vestedValue = vesting.vestedShares * currentPrice;
-            document.getElementById('vestedValue').textContent = formatCurrency(vestedValue);
-        }
-
-        // Initialize on page load
-        window.onload = function() {
-            const savedData = localStorage.getItem('founderCompData');
-            if (savedData) {
-                compData = JSON.parse(savedData);
-
-                // Fill form with saved data
-                document.getElementById('ticker').value = compData.ticker;
-                document.getElementById('startDate').value = compData.startDate || '2025-03-15';
-                document.getElementById('vestDate').value = compData.vestDate;
-                document.getElementById('totalShares').value = compData.totalShares;
-                document.getElementById('strikePrice').value = compData.strikePrice;
-                document.getElementById('baseSalary').value = compData.baseSalary || '';
-
-                loadStockData().then(() => {
-                    showDashboard();
-                    updateDashboard();
-                });
-            } else {
-                // Set default start date for new users
-                document.getElementById('startDate').value = '2025-03-15';
-            }
-        };
-    </script>
+window.onload = init;
+</script>
 </body>
 </html>
