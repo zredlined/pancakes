@@ -885,12 +885,9 @@ function render() {
         document.getElementById('quarterProgress').style.width = `${s.qPct * 100}%`;
 
         const netCash = eventCash(schedule, s.nextEvent);
-        let details = `${fmtShares(s.nextEvent.s)} shares`;
+        let details = `${fmtShares(s.nextEvent.s)} shares @ ${fmtPrice(price)} today`;
         if (netCash > 0) details += ` + ${fmtM(netCash)} cash`;
         details += `  ·  ~${fmtFull(Math.round(s.nextValue))} at current price`;
-        if (s.nextEvent.i || s.nextEvent.g) {
-            details += `  ·  ${fmtM((s.nextEvent.i || 0) + (s.nextEvent.g || 0))} tax value`;
-        }
         document.getElementById('nextPayDetails').textContent = details;
         document.getElementById('paydayCard').classList.remove('hidden');
     } else {
@@ -1011,11 +1008,10 @@ function renderPaymentList() {
         if (ev.s === 0 && ev.c === 0) {
             amtStr = 'shares held for escrow release';
         } else if (netCash > 0) {
-            amtStr = `${fmtShares(ev.s)} shares + ${fmtM(netCash)} net cash`;
+            amtStr = `${fmtShares(ev.s)} shares @ ${fmtPrice(price)} today + ${fmtM(netCash)} net cash`;
         } else {
-            amtStr = `${fmtShares(ev.s)} shares`;
+            amtStr = `${fmtShares(ev.s)} shares @ ${fmtPrice(price)} today`;
         }
-        if (ev.i || ev.g) amtStr += ` · ${fmtM((ev.i || 0) + (ev.g || 0))} tax value`;
 
         const valStr  = totalVal > 0 ? fmtM(totalVal) : '';
         const daysBdg = !isPast && daysTo > 0
