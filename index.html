@@ -305,10 +305,17 @@
         .progress-text { font-size: 14px; color: #a1a1a6; }
 
         /* ── Stats grid ──────────────────────────────────────────── */
-        .three-grid {
+        .stats-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 16px;
+        }
+
+        .escrow-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 14px;
         }
 
         .metric {
@@ -483,13 +490,29 @@
 
         .badge-days   { background: rgba(255, 159, 10, 0.15); color: #ff9f0a; }
         .badge-escrow { background: rgba(255, 214, 10, 0.12); color: #ffd60a; }
+        .badge-sale   { background: rgba(48, 209, 88, 0.12); color: #30d158; }
+        .badge-debit  { background: rgba(255, 69, 58, 0.12); color: #ff453a; }
+
+        .item-sale {
+            background: rgba(48, 209, 88, 0.05) !important;
+            border: 1px solid rgba(48, 209, 88, 0.16);
+        }
+
+        .item-sale .pi-value { color: #30d158; }
+
+        .item-debit {
+            background: rgba(255, 69, 58, 0.05) !important;
+            border: 1px solid rgba(255, 69, 58, 0.16);
+        }
+
+        .item-debit .pi-value { color: #ff453a; }
 
         /* ── Hidden utility ──────────────────────────────────────── */
         .hidden { display: none !important; }
 
         /* ── Responsive ──────────────────────────────────────────── */
         @media (max-width: 680px) {
-            .three-grid { grid-template-columns: 1fr; }
+            .stats-grid, .escrow-grid { grid-template-columns: 1fr 1fr; }
             .hero-value { font-size: 52px; }
             .price      { font-size: 40px; }
         }
@@ -498,6 +521,7 @@
             body        { padding: 12px; }
             .card       { padding: 18px; margin-bottom: 14px; }
             .hero-value { font-size: 44px; }
+            .stats-grid, .escrow-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -569,6 +593,7 @@
                     <div class="progress-fill red-green-gradient" id="escrowProgress" style="width:0%"></div>
                 </div>
                 <div class="progress-text" id="escrowText"></div>
+                <div class="escrow-grid" id="escrowGrid"></div>
             </div>
             <div class="progress-section">
                 <div class="progress-title">Vesting Progress</div>
@@ -582,14 +607,18 @@
 
         <!-- Stats -->
         <div class="card">
-            <div class="three-grid">
+            <div class="stats-grid">
                 <div class="metric">
                     <div class="metric-value deal" id="totalDealValue">—</div>
                     <div class="metric-label">Total deal value today</div>
                 </div>
                 <div class="metric">
                     <div class="metric-value" id="remainingValue">—</div>
-                    <div class="metric-label">Still to vest</div>
+                    <div class="metric-label">Still to vest / collect</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value pos" id="realizedValue">—</div>
+                    <div class="metric-label">Locked sale proceeds</div>
                 </div>
                 <div class="metric">
                     <div class="metric-value" id="stockAppreciation">—</div>
@@ -660,18 +689,82 @@ function today() {
 
 // ── Format helpers ───────────────────────────────────────────────────────────
 function fmtM(n) {
-    if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
-    if (n >= 1e3) return '$' + Math.round(n).toLocaleString();
-    return '$' + n.toFixed(0);
+    const sign = n < 0 ? '-' : '';
+    const v = Math.abs(n);
+    if (v >= 1e6) return sign + '$' + (v / 1e6).toFixed(1) + 'M';
+    if (v >= 1e3) return sign + '$' + Math.round(v).toLocaleString();
+    return sign + '$' + v.toFixed(0);
 }
 
-function fmtFull(n) { return '$' + Math.round(n).toLocaleString(); }
+function fmtFull(n) {
+    const sign = n < 0 ? '-' : '';
+    return sign + '$' + Math.round(Math.abs(n)).toLocaleString();
+}
+
+function fmtPrice(n) { return '$' + n.toFixed(2); }
+function fmtShares(n) { return Math.round(n).toLocaleString(); }
 
 function fmtDate(d) {
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function getQL(idx) { return `Y${Math.floor(idx / 4) + 1} Q${(idx % 4) + 1}`; }
+
+function eventCash(sch, ev) {
+    const relDate = sch.escrow?.releaseDate;
+    const debits = getEscrowDebits(sch);
+    if (!relDate || ev.d !== relDate) return ev.c || 0;
+    return (ev.c || 0) - debits.reduce((sum, d) => sum + personalDebit(sch, d), 0);
+}
+
+function getSales(sch) { return sch.tx?.sales || []; }
+function getEscrowDebits(sch) { return sch.escrow?.debits || []; }
+
+function personalDebit(sch, debit) {
+    if (typeof debit.a === 'number') return debit.a;
+    const rate = typeof debit.r === 'number' ? debit.r : (sch.escrow?.debitRate || 0);
+    return (debit.g || 0) * rate;
+}
+
+function saleProceeds(sale) { return sale.s * sale.p; }
+
+function getSaleSummary(sch, asOf) {
+    const sales = getSales(sch)
+        .filter(s => parseDate(s.d) <= asOf)
+        .sort((a, b) => parseDate(a.d) - parseDate(b.d));
+
+    return sales.reduce((acc, sale) => {
+        acc.soldShares += sale.s;
+        acc.proceeds += saleProceeds(sale);
+        acc.lastPrice = sale.p;
+        return acc;
+    }, { soldShares: 0, proceeds: 0, lastPrice: 0 });
+}
+
+function getEscrowSummary(sch, price) {
+    const releaseEvent = sch.ev.find(e => e.d === sch.escrow?.releaseDate) || { s: 0, c: 0 };
+    const debits = getEscrowDebits(sch);
+    const totalDebit = debits.reduce((sum, d) => sum + personalDebit(sch, d), 0);
+    const heldShares = sch.escrow?.heldShares ?? Math.max(0, (releaseEvent.s || 0) - (releaseEvent.v || 0));
+    const releaseCash = sch.escrow?.releaseCash ?? releaseEvent.c ?? 0;
+    const repFund = sch.escrow?.stockholderRepFund ?? 0;
+    const basis = sch.escrow?.debitBasis || 'pro-rata';
+    const alt = sch.escrow?.overallProRataRate
+        ? (sch.escrow.referenceDebitGross || 0) * sch.escrow.overallProRataRate
+        : 0;
+
+    return {
+        grossCash: releaseCash + repFund,
+        releaseCash,
+        repFund,
+        heldShares,
+        heldSharesValue: heldShares * price,
+        totalDebit,
+        netCash: releaseCash + repFund - totalDebit,
+        debitBasis: basis,
+        altDebit: alt
+    };
+}
 
 // ── Hero count-up animation ───────────────────────────────────────────────────
 function animateHero(target) {
@@ -692,6 +785,8 @@ function getStatus(sch, price) {
     const now      = today();
     const events   = sch.ev;
     const lastDate = parseDate(events[events.length - 1].d);
+    const saleSummary = getSaleSummary(sch, now);
+    const escrow = getEscrowSummary(sch, price);
 
     const pastEvents   = events.filter(e => parseDate(e.d) <= now);
     const futureEvents = events.filter(e => parseDate(e.d) > now);
@@ -699,15 +794,16 @@ function getStatus(sch, price) {
     const prevEvent    = pastEvents[pastEvents.length - 1] || null;
 
     const issuedShares = pastEvents.reduce((s, e) => s + e.s, 0);
-    const pastCash     = pastEvents.reduce((s, e) => s + e.c, 0);
-    const totalEarned  = sch.k + issuedShares * price + pastCash;
+    const floatingIssuedShares = Math.max(0, issuedShares - saleSummary.soldShares);
+    const pastCash     = pastEvents.reduce((s, e) => s + eventCash(sch, e), 0);
+    const totalEarned  = sch.k + saleSummary.proceeds + floatingIssuedShares * price + pastCash;
 
     const remShares = futureEvents.reduce((s, e) => s + e.s, 0);
-    const remCash   = futureEvents.reduce((s, e) => s + e.c, 0);
+    const remCash   = futureEvents.reduce((s, e) => s + eventCash(sch, e), 0);
     const remValue  = remShares * price + remCash;
 
     const daysToNext = nextEvent ? Math.ceil((parseDate(nextEvent.d) - now) / 86400000) : 0;
-    const nextValue  = nextEvent ? nextEvent.s * price + nextEvent.c : 0;
+    const nextValue  = nextEvent ? nextEvent.s * price + eventCash(sch, nextEvent) : 0;
 
     let qPct = 0, daysSincePrev = 0, qLen = 0;
     if (prevEvent && nextEvent) {
@@ -734,17 +830,18 @@ function getStatus(sch, price) {
     const dailyRate = remValue / remDays;
 
     const allShares = events.reduce((s, e) => s + e.s, 0);
-    const allCash   = events.reduce((s, e) => s + e.c, 0);
-    const dealValue = allShares * price + sch.k + allCash;
+    const allCash   = events.reduce((s, e) => s + eventCash(sch, e), 0);
+    const floatingDealShares = Math.max(0, allShares - saleSummary.soldShares);
+    const dealValue = floatingDealShares * price + saleSummary.proceeds + sch.k + allCash;
 
     const appreciation = ((price - sch.p) / sch.p) * 100;
 
     return {
-        totalEarned, issuedShares, pastCash,
+        totalEarned, issuedShares, floatingIssuedShares, pastCash, saleSummary,
         nextEvent, daysToNext, nextValue, prevEvent,
         qPct, daysSincePrev, qLen,
         overallPct, elapsedDays, totalDays,
-        escrowDone, escrowPct, daysToEscrow,
+        escrowDone, escrowPct, daysToEscrow, escrow,
         dailyRate, remValue,
         dealValue, appreciation,
         payCount: pastEvents.length,
@@ -776,7 +873,7 @@ function render() {
         document.getElementById('totalEarned').textContent = fmtM(s.totalEarned);
     }
     document.getElementById('heroBreakdown').textContent =
-        `$${(schedule.k / 1e6).toFixed(1)}M cash at close  ·  ${s.issuedShares.toLocaleString()} shares issued`;
+        `$${(schedule.k / 1e6).toFixed(1)}M cash at close  ·  ${fmtShares(s.saleSummary.soldShares)} shares locked  ·  ${fmtShares(s.floatingIssuedShares)} floating shares`;
     document.getElementById('dailyRate').textContent =
         `${fmtFull(Math.round(s.dailyRate))} vesting per day`;
 
@@ -787,25 +884,33 @@ function render() {
         document.getElementById('nextPayDays').textContent = s.daysToNext;
         document.getElementById('quarterProgress').style.width = `${s.qPct * 100}%`;
 
-        let details = `${s.nextEvent.s.toLocaleString()} shares`;
-        if (s.nextEvent.c > 0) details += ` + ${fmtM(s.nextEvent.c)} cash`;
+        const netCash = eventCash(schedule, s.nextEvent);
+        let details = `${fmtShares(s.nextEvent.s)} shares`;
+        if (netCash > 0) details += ` + ${fmtM(netCash)} cash`;
         details += `  ·  ~${fmtFull(Math.round(s.nextValue))} at current price`;
+        if (s.nextEvent.i || s.nextEvent.g) {
+            details += `  ·  ${fmtM((s.nextEvent.i || 0) + (s.nextEvent.g || 0))} tax value`;
+        }
         document.getElementById('nextPayDetails').textContent = details;
         document.getElementById('paydayCard').classList.remove('hidden');
     } else {
         document.getElementById('paydayCard').classList.add('hidden');
     }
 
-    // Escrow (hide the whole section once released)
-    if (!s.escrowDone) {
-        document.getElementById('escrowSub').textContent = fmtDate(ESCROW_DATE);
-        document.getElementById('escrowProgress').style.width = `${s.escrowPct * 100}%`;
-        document.getElementById('escrowText').textContent =
-            `${Math.round(s.escrowPct * 100)}%  ·  ${s.daysToEscrow} days remaining`;
-        document.getElementById('escrowSection').classList.remove('hidden');
-    } else {
-        document.getElementById('escrowSection').classList.add('hidden');
-    }
+    // Escrow
+    document.getElementById('escrowSub').textContent =
+        `${fmtDate(ESCROW_DATE)}  ·  ${fmtShares(s.escrow.heldShares)} held shares release`;
+    document.getElementById('escrowProgress').style.width = `${s.escrowPct * 100}%`;
+    document.getElementById('escrowText').textContent = s.escrowDone
+        ? `Released  ·  ${fmtM(s.escrow.totalDebit)} modeled debits`
+        : `${Math.round(s.escrowPct * 100)}%  ·  ${s.daysToEscrow} days remaining  ·  ${fmtM(s.escrow.totalDebit)} modeled debits`;
+    document.getElementById('escrowGrid').innerHTML = [
+        ['Gross escrow cash', fmtM(s.escrow.grossCash)],
+        ['Modeled debit', '-' + fmtM(s.escrow.totalDebit)],
+        ['Net escrow cash', fmtM(s.escrow.netCash)],
+        ['Held shares today', fmtM(s.escrow.heldSharesValue)]
+    ].map(([label, value]) => `<div class="metric"><div class="metric-value">${value}</div><div class="metric-label">${label}</div></div>`).join('');
+    document.getElementById('escrowSection').classList.remove('hidden');
 
     // Overall vesting
     document.getElementById('overallProgress').style.width = `${s.overallPct * 100}%`;
@@ -815,6 +920,7 @@ function render() {
     // Stats
     document.getElementById('totalDealValue').textContent = fmtM(s.dealValue);
     document.getElementById('remainingValue').textContent = fmtM(s.remValue);
+    document.getElementById('realizedValue').textContent = fmtM(s.saleSummary.proceeds);
 
     const apEl = document.getElementById('stockAppreciation');
     apEl.className = 'metric-value ' + (ap >= 0 ? 'pos' : 'neg');
@@ -831,21 +937,69 @@ function renderPaymentList() {
     const now    = today();
     const price  = stockData.price;
     const events = schedule.ev;
+    const debits = getEscrowDebits(schedule);
+    const sales  = getSales(schedule);
     let nextFound = false;
 
-    const html = events.map((ev, idx) => {
-        const date     = parseDate(ev.d);
-        const isPast   = date <= now;
+    const rows = [
+        ...events.map((ev, idx) => ({ type: 'vesting', ev, idx, date: parseDate(ev.d) })),
+        ...sales.map(sale => ({ type: 'sale', sale, date: parseDate(sale.d) })),
+        ...debits.map(debit => ({ type: 'debit', debit, date: parseDate(debit.d) }))
+    ].sort((a, b) => a.date - b.date || (a.type === 'vesting' ? -1 : 1));
+
+    const html = rows.map(row => {
+        const date   = row.date;
+        const isPast = date <= now;
+        const daysTo = Math.ceil((date - now) / 86400000);
+
+        if (row.type === 'sale') {
+            const sale = row.sale;
+            const totalVal = saleProceeds(sale);
+            const daysBdg = !isPast && daysTo > 0
+                ? `<span class="badge badge-days">in ${daysTo}d</span>` : '';
+            return `<div class="payment-item item-sale ${isPast ? 'item-past' : ''}">
+                <div class="pi-icon"><span class="pi-check">$</span></div>
+                <div class="pi-info">
+                    <div class="pi-row1">
+                        <span class="pi-date">${fmtDate(date)}</span>
+                        <span class="badge badge-sale">Share Sale</span>${daysBdg}
+                    </div>
+                    <div class="pi-row2">${fmtShares(sale.s)} shares sold @ ${fmtPrice(sale.p)}</div>
+                </div>
+                <div class="pi-value">${fmtM(totalVal)}</div>
+            </div>`;
+        }
+
+        if (row.type === 'debit') {
+            const debit = row.debit;
+            const val = personalDebit(schedule, debit);
+            const daysBdg = !isPast && daysTo > 0
+                ? `<span class="badge badge-days">in ${daysTo}d</span>` : '';
+            return `<div class="payment-item item-debit ${isPast ? 'item-past' : ''}">
+                <div class="pi-icon"><span class="pi-check">−</span></div>
+                <div class="pi-info">
+                    <div class="pi-row1">
+                        <span class="pi-date">${fmtDate(date)}</span>
+                        <span class="badge badge-debit">Escrow Debit</span>${daysBdg}
+                    </div>
+                    <div class="pi-row2">${debit.n || 'Payment to NVIDIA'} · ${((debit.r || schedule.escrow?.debitRate || 0) * 100).toFixed(1)}% of ${fmtM(debit.g || 0)}</div>
+                </div>
+                <div class="pi-value">-${fmtM(val)}</div>
+            </div>`;
+        }
+
+        const ev       = row.ev;
+        const idx      = row.idx;
         const isNext   = !isPast && !nextFound;
         if (isNext) nextFound = true;
-        const isEscrow = ev.c > 0;
-        const totalVal = ev.s * price + ev.c;
-        const daysTo   = Math.ceil((date - now) / 86400000);
+        const netCash  = eventCash(schedule, ev);
+        const isEscrow = ev.c > 0 || ev.d === schedule.escrow?.releaseDate;
+        const totalVal = ev.s * price + netCash;
 
         let cls = 'payment-item';
-        if (isPast)             cls += ' item-past';
-        else if (isNext)        cls += ' item-next';
-        else if (isEscrow)      cls += ' item-escrow';
+        if (isPast)        cls += ' item-past';
+        else if (isNext)   cls += ' item-next';
+        else if (isEscrow) cls += ' item-escrow';
 
         let icon;
         if (isPast)        icon = `<span class="pi-check">✓</span>`;
@@ -856,11 +1010,12 @@ function renderPaymentList() {
         let amtStr;
         if (ev.s === 0 && ev.c === 0) {
             amtStr = 'shares held for escrow release';
-        } else if (ev.c > 0) {
-            amtStr = `${ev.s.toLocaleString()} shares + ${fmtM(ev.c)} cash`;
+        } else if (netCash > 0) {
+            amtStr = `${fmtShares(ev.s)} shares + ${fmtM(netCash)} net cash`;
         } else {
-            amtStr = `${ev.s.toLocaleString()} shares`;
+            amtStr = `${fmtShares(ev.s)} shares`;
         }
+        if (ev.i || ev.g) amtStr += ` · ${fmtM((ev.i || 0) + (ev.g || 0))} tax value`;
 
         const valStr  = totalVal > 0 ? fmtM(totalVal) : '';
         const daysBdg = !isPast && daysTo > 0
