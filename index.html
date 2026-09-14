@@ -786,7 +786,8 @@ function getEscrowSummary(sch, price) {
     const alt = sch.escrow?.overallProRataRate
         ? (sch.escrow.referenceDebitGross || 0) * sch.escrow.overallProRataRate
         : 0;
-    const estimatedCash = releaseCash - totalDebit;
+    const netEscrowCash = releaseCash - totalDebit;
+    const estimatedCash = netEscrowCash + repFund;
     const heldSharesValue = heldShares * price;
 
     return {
@@ -797,9 +798,10 @@ function getEscrowSummary(sch, price) {
         heldSharesValue,
         totalDebit,
         estimatedCash,
-        netCash: estimatedCash + repFund,
+        netEscrowCash,
+        netCash: estimatedCash,
         estimatedTotalValue: estimatedCash + heldSharesValue,
-        maxTotalValue: estimatedCash + repFund + heldSharesValue,
+        maxTotalValue: releaseCash + repFund + heldSharesValue,
         debitBasis: basis,
         altDebit: alt
     };
@@ -1011,9 +1013,12 @@ function renderPaymentList() {
             const totalVal = salePreTaxValue(sale);
             const rowDate = sale.dateLabel || fmtDate(date);
             const lots = Array.isArray(sale.lots) && sale.lots.length
-                ? ` · ${sale.lots.map(fmtShares).join(' + ')} share lots` : '';
+                ? ` · ${sale.lots.map(lot => typeof lot === 'number'
+                    ? `${fmtShares(lot)} shares`
+                    : `${fmtShares(lot.s)} shares / ${fmtFull(lot.a)}`).join(' + ')}`
+                : '';
             const saleDetails = sale.grossShares
-                ? `${fmtShares(sale.s)} net shares sold · ${fmtShares(sale.grossShares)} gross @ ${fmtPrice(sale.estimatePrice)} estimate${lots}`
+                ? `${fmtShares(sale.s)} net sold @ ${fmtPrice(sale.p)} avg · ${fmtShares(sale.grossShares)} gross @ ${fmtPrice(sale.estimatePrice)} vest FMV${lots}`
                 : `${fmtShares(sale.s)} shares sold @ ${fmtPrice(sale.p)}${lots}`;
             const daysBdg = !isPast && daysTo > 0
                 ? `<span class="badge badge-days">in ${daysTo}d</span>` : '';
