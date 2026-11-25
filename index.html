@@ -298,10 +298,6 @@
             box-shadow: 0 1px 6px rgba(0, 122, 255, 0.35);
         }
 
-        .red-green-gradient {
-            background: linear-gradient(90deg, #ff6b6b 0%, #ffa726 40%, #30d158 100%);
-        }
-
         .progress-text { font-size: 14px; color: #a1a1a6; }
 
         /* ── Stats grid ──────────────────────────────────────────── */
@@ -311,12 +307,7 @@
             gap: 16px;
         }
 
-        .escrow-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin-top: 14px;
-        }
+        #dealBreakdown { margin: 12px 0 0; }
 
         .metric {
             text-align: center;
@@ -544,7 +535,7 @@
 
         /* ── Responsive ──────────────────────────────────────────── */
         @media (max-width: 680px) {
-            .stats-grid, .escrow-grid { grid-template-columns: 1fr 1fr; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
             .hero-value { font-size: 52px; }
             .price      { font-size: 40px; }
         }
@@ -553,7 +544,7 @@
             body        { padding: 12px; }
             .card       { padding: 18px; margin-bottom: 14px; }
             .hero-value { font-size: 44px; }
-            .stats-grid, .escrow-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -616,17 +607,8 @@
             <div class="payday-details" id="nextPayDetails"></div>
         </div>
 
-        <!-- Progress: escrow + overall vesting in one card -->
+        <!-- Acquisition vesting progress -->
         <div class="card">
-            <div class="progress-section" id="escrowSection">
-                <div class="progress-title">Escrow Release</div>
-                <div class="progress-subtitle" id="escrowSub"></div>
-                <div class="progress-bar">
-                    <div class="progress-fill red-green-gradient" id="escrowProgress" style="width:0%"></div>
-                </div>
-                <div class="progress-text" id="escrowText"></div>
-                <div class="escrow-grid" id="escrowGrid"></div>
-            </div>
             <div class="progress-section">
                 <div class="progress-title">Vesting Progress</div>
                 <div class="progress-subtitle">4-year schedule</div>
@@ -660,8 +642,8 @@
                     <div class="metric-label">Recorded share-sale proceeds</div>
                 </div>
                 <div class="metric">
-                    <div class="metric-value" id="stockAppreciation">—</div>
-                    <div class="metric-label">NVDA appreciation</div>
+                    <div class="metric-value" id="heldShares">—</div>
+                    <div class="metric-label" id="heldSharesLabel">Unsold shares</div>
                 </div>
             </div>
             <div class="progress-subtitle" id="dealBreakdown"></div>
@@ -779,11 +761,6 @@ function fmtDate(d) {
 
 function getQL(idx) { return `Y${Math.floor(idx / 4) + 1} Q${(idx % 4) + 1}`; }
 
-function getEscrowDate(sch) {
-    const date = sch.escrow?.shareReleaseDate || sch.escrow?.expectedReceiptDate || sch.escrow?.releaseDate;
-    return date ? parseDate(date) : null;
-}
-
 function getEventNetShares(ev) {
     return typeof ev.net === 'number' ? ev.net : (ev.s || 0);
 }
@@ -900,45 +877,6 @@ function getSaleSummary(sch, asOf) {
     }), { soldShares: 0, actualProceeds: 0 });
 }
 
-function getEscrowSummary(sch, price) {
-    const releaseEvent = sch.ev.find(e => e.d === sch.escrow?.releaseDate) || { s: 0, c: 0 };
-    const debits = getEscrowDebits(sch);
-    const totalDebit = debits.reduce((sum, d) => sum + personalDebit(sch, d), 0);
-    const heldShares = sch.escrow?.heldShares ?? Math.max(0, (releaseEvent.s || 0) - (releaseEvent.v || 0));
-    const releaseCash = sch.escrow?.releaseCash ?? releaseEvent.c ?? 0;
-    const repFund = sch.escrow?.stockholderRepFund ?? 0;
-    const basis = sch.escrow?.debitBasis || 'pro-rata';
-    const alt = sch.escrow?.overallProRataRate
-        ? (sch.escrow.referenceDebitGross || 0) * sch.escrow.overallProRataRate
-        : 0;
-    const netEscrowCash = sch.escrow?.cashEscrowPaid ?? (releaseCash - totalDebit);
-    const paidExpenseFund = sch.escrow?.expenseFundPaid ?? repFund;
-    const estimatedCash = sch.escrow?.totalCashPaid ?? (netEscrowCash + paidExpenseFund);
-    const heldSharesValue = heldShares * price;
-    const cashCheckDate = sch.escrow?.cashCheckDate || sch.escrow?.releaseDate || null;
-    const shareReleaseDate = sch.escrow?.shareReleaseDate || sch.escrow?.expectedReceiptDate || null;
-
-    return {
-        grossCash: releaseCash + repFund,
-        releaseCash,
-        repFund: paidExpenseFund,
-        heldShares,
-        heldSharesValue,
-        totalDebit,
-        estimatedCash,
-        netEscrowCash,
-        netCash: estimatedCash,
-        estimatedTotalValue: estimatedCash + heldSharesValue,
-        maxTotalValue: releaseCash + repFund + heldSharesValue,
-        debitBasis: basis,
-        altDebit: alt,
-        cashCheckDate,
-        shareReleaseDate,
-        cashIssued: ['check issued', 'paid'].includes(sch.escrow?.cashStatus),
-        sharesDeferred: Boolean(shareReleaseDate && shareReleaseDate !== cashCheckDate)
-    };
-}
-
 // ── Hero count-up animation ───────────────────────────────────────────────────
 function animateHero(target) {
     const el       = document.getElementById('totalEarned');
@@ -960,8 +898,6 @@ function getStatus(sch, price, asOf = today()) {
     const vestingEvents = getVestingEvents(sch);
     const lastDate = parseDate(vestingEvents[vestingEvents.length - 1].d);
     const saleSummary = getSaleSummary(sch, now);
-    const escrow = getEscrowSummary(sch, price);
-    const escrowDate = getEscrowDate(sch);
     const comp = getCompSummary(sch, price, now);
 
     const pastEvents   = events.filter(e => parseDate(e.d) <= now);
@@ -972,9 +908,11 @@ function getStatus(sch, price, asOf = today()) {
 
     const issuedShares = pastEvents.reduce((s, e) => s + getEventNetShares(e), 0);
     const floatingIssuedShares = Math.max(0, issuedShares - saleSummary.soldShares);
+    const heldSharesEstimated = pastVestingEvents.some(event => event.s > 0 && !Number.isFinite(event.net));
+    const heldValue = floatingIssuedShares * price;
     const withheldTaxes = pastEvents.reduce((s, e) => s + getEventWithholding(e), 0);
     const pastCash     = pastEvents.reduce((s, e) => s + eventCash(sch, e), 0);
-    const totalEarned  = sch.k + pastCash + saleSummary.actualProceeds + withheldTaxes + floatingIssuedShares * price;
+    const totalEarned  = sch.k + pastCash + saleSummary.actualProceeds + withheldTaxes + heldValue;
 
     const remShares = futureEvents.reduce((s, e) => s + e.s, 0);
     const remCash   = futureEvents.reduce((s, e) => s + eventCash(sch, e), 0);
@@ -1032,12 +970,6 @@ function getStatus(sch, price, asOf = today()) {
     const elapsedDays = Math.max(0, Math.floor((now - CLOSE_DATE) / 86400000));
     const overallPct  = Math.min(elapsedDays / totalDays, 1);
 
-    const escrowDone   = escrowDate ? now >= escrowDate : false;
-    const escrowTotal  = escrowDate ? Math.floor((escrowDate - CLOSE_DATE) / 86400000) : 1;
-    const escrowElap   = Math.max(0, Math.floor((now - CLOSE_DATE) / 86400000));
-    const escrowPct    = Math.min(escrowElap / escrowTotal, 1);
-    const daysToEscrow = escrowDate ? Math.max(0, Math.ceil((escrowDate - now) / 86400000)) : 0;
-
     const remDays   = Math.max(1, Math.ceil((lastDate - now) / 86400000));
     const remainingAcquisitionDailyRate = remValue / remDays;
     const acquisitionDailyRate = getRecurringAcquisitionDailyRate(sch, price, now);
@@ -1048,13 +980,12 @@ function getStatus(sch, price, asOf = today()) {
     const appreciation = ((price - sch.p) / sch.p) * 100;
 
     return {
-        totalEarned, issuedShares, floatingIssuedShares, withheldTaxes,
+        totalEarned, issuedShares, floatingIssuedShares, heldValue, heldSharesEstimated, withheldTaxes,
         pastCash, saleSummary, remShares,
         nextEvent, daysToNext, nextValue, prevEvent,
         nextPayout, daysToNextPayout,
         qPct, daysSincePrev, qLen,
-        overallPct, elapsedDays, totalDays, escrowDate,
-        escrowDone, escrowPct, daysToEscrow, escrow,
+        overallPct, elapsedDays, totalDays,
         dailyRate, acquisitionDailyRate, remainingAcquisitionDailyRate, comp, remValue,
         dealValue, appreciation,
         payCount: pastVestingEvents.length,
@@ -1086,9 +1017,9 @@ function render() {
         document.getElementById('totalEarned').textContent = fmtM(s.totalEarned);
     }
     document.getElementById('heroBreakdown').textContent =
-        `${fmtM(schedule.k + s.pastCash)} cash payments · ${fmtM(s.saleSummary.actualProceeds)} share sales · ${fmtShares(s.floatingIssuedShares)} estimated shares held`;
+        `${fmtM(schedule.k + s.pastCash)} cash payments · ${fmtM(s.saleSummary.actualProceeds)} share sales · ${fmtM(s.heldValue)} ${s.heldSharesEstimated ? 'est. ' : ''}held value`;
     const dailyRateEl = document.getElementById('dailyRate');
-    dailyRateEl.textContent = `${fmtFull(Math.round(s.dailyRate))} recurring value per day`;
+    dailyRateEl.textContent = `${fmtFull(s.dailyRate)} est. comp per day`;
     dailyRateEl.title = `${fmtFull(Math.round(s.acquisitionDailyRate))} acquisition vesting + ${fmtFull(Math.round(s.comp?.dailyPackage || 0))} compensation package; escrow excluded`;
 
     // Next payday
@@ -1123,24 +1054,6 @@ function render() {
         document.getElementById('paydayCard').classList.add('hidden');
     }
 
-    // Escrow
-    const shareTiming = s.escrowDate ? `Shares scheduled ${fmtDate(s.escrowDate)}` : 'Share timing pending';
-    const cashTiming = s.escrow.cashIssued && s.escrow.cashCheckDate
-        ? `Cash paid ${fmtDate(parseDate(s.escrow.cashCheckDate))}`
-        : 'Cash timing pending';
-    document.getElementById('escrowSub').textContent = `${cashTiming}  ·  ${shareTiming}`;
-    document.getElementById('escrowProgress').style.width = `${s.escrowPct * 100}%`;
-    document.getElementById('escrowText').textContent = s.escrowDone
-        ? 'Scheduled release date passed'
-        : `${s.daysToEscrow} days until shares`;
-    document.getElementById('escrowGrid').innerHTML = [
-        ['Cash paid', fmtFull(s.escrow.estimatedCash)],
-        ['Escrow shares', fmtShares(s.escrow.heldShares)],
-        ['Stock value', fmtM(s.escrow.heldSharesValue)],
-        ['Total value', fmtM(s.escrow.estimatedTotalValue)]
-    ].map(([label, value]) => `<div class="metric"><div class="metric-value">${value}</div><div class="metric-label">${label}</div></div>`).join('');
-    document.getElementById('escrowSection').classList.remove('hidden');
-
     // Overall vesting
     document.getElementById('overallProgress').style.width = `${s.overallPct * 100}%`;
     document.getElementById('overallText').textContent =
@@ -1150,12 +1063,12 @@ function render() {
     document.getElementById('totalDealValue').textContent = fmtM(s.dealValue);
     document.getElementById('remainingValue').textContent = fmtM(s.remValue);
     document.getElementById('realizedValue').textContent = fmtM(s.saleSummary.actualProceeds);
+    document.getElementById('heldShares').textContent = fmtShares(s.floatingIssuedShares);
+    document.getElementById('heldSharesLabel').textContent =
+        `${s.heldSharesEstimated ? 'Est. unsold shares' : 'Unsold shares'} · ${fmtM(s.heldValue)} at market`;
+    const holdingsNote = s.heldSharesEstimated ? ' · Unsold-share estimate uses gross vest shares where net delivery is unrecorded' : '';
     document.getElementById('dealBreakdown').textContent =
-        `${fmtM(schedule.k + s.pastCash)} cash received · ${fmtM(s.saleSummary.actualProceeds)} recorded sales · ${fmtM(s.withheldTaxes)} withholding · ${fmtShares(s.floatingIssuedShares + s.remShares)} estimated held or unvested shares at market`;
-
-    const apEl = document.getElementById('stockAppreciation');
-    apEl.className = 'metric-value ' + (ap >= 0 ? 'pos' : 'neg');
-    apEl.textContent = `${ap >= 0 ? '+' : ''}${ap.toFixed(1)}%`;
+        `Deal value includes ${fmtM(schedule.k + s.pastCash)} cash received and ${fmtM(s.withheldTaxes)} recorded withholding${holdingsNote}`;
 
     // Ongoing compensation
     if (s.comp) {
@@ -1319,14 +1232,18 @@ function renderPaymentList() {
         let amtStr;
         if (ev.s === 0 && ev.c === 0) {
             amtStr = 'shares held for escrow release';
+        } else if (ev.escrowShares > 0) {
+            const escrowLabel = isPast && schedule.escrow?.shareStatus === 'released' ? 'escrow shares released' : 'escrow shares';
+            const baseShares = ev.baseShares ?? Math.max(0, (ev.s || 0) - ev.escrowShares);
+            const vestLabel = isPast && Number.isFinite(ev.net)
+                ? `${fmtShares(Math.max(0, ev.net - ev.escrowShares))} net vest shares`
+                : `${fmtShares(baseShares)} gross vest shares${isPast && ev.received ? ' (net pending)' : ''}`;
+            amtStr = `${vestLabel} + ${fmtShares(ev.escrowShares)} ${escrowLabel} @ ${fmtPrice(price)} today`;
         } else if (isPast && typeof ev.wh === 'number') {
             amtStr = `${fmtShares(actualShares)} net shares issued · ${fmtShares(ev.wh)} withheld`;
             if (ev.f) amtStr += ` · ${fmtPrice(ev.f)} vest FMV`;
         } else if (ev.kind === 'escrow-cash') {
             amtStr = 'Escrow cash and expense fund paid';
-        } else if (ev.escrowShares > 0) {
-            const baseShares = ev.baseShares ?? Math.max(0, (ev.s || 0) - ev.escrowShares);
-            amtStr = `${fmtShares(baseShares)} scheduled gross vest shares + ${fmtShares(ev.escrowShares)} escrow shares @ ${fmtPrice(price)} today`;
         } else if (netCash > 0) {
             amtStr = `${fmtShares(ev.s)} shares @ ${fmtPrice(price)} today + ${fmtM(netCash)} net cash`;
         } else {
