@@ -195,6 +195,13 @@
             margin-bottom: 10px;
         }
 
+        .hero-rates {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+        }
+
         .hero-rate {
             display: inline-block;
             background: rgba(255, 159, 10, 0.12);
@@ -586,7 +593,10 @@
             <div class="hero-label">Earned to date</div>
             <div class="hero-value" id="totalEarned">—</div>
             <div class="hero-breakdown" id="heroBreakdown"></div>
-            <span class="hero-rate" id="dailyRate"></span>
+            <div class="hero-rates">
+                <span class="hero-rate" id="dailyRate"></span>
+                <span class="hero-rate" id="annualRate"></span>
+            </div>
         </div>
 
         <!-- Next payday -->
@@ -701,6 +711,7 @@
 // ── Constants ────────────────────────────────────────────────────────────────
 const PASS_KEY    = '_pv1';
 const CLOSE_DATE  = new Date(2025, 2, 14, 12, 0, 0);
+const DAYS_PER_YEAR = 365.25;
 
 // ── State ────────────────────────────────────────────────────────────────────
 let scheduleBlob  = null;
@@ -818,7 +829,7 @@ function getCompSummary(sch, price, asOf = today()) {
         grantDate: rsu.grantDate,
         termYears,
         annualComp,
-        dailyPackage: annualComp / 365.25,
+        dailyPackage: annualComp / DAYS_PER_YEAR,
         quarterlyValue: events.length ? marketValue / events.length : 0,
         nextEvent,
         pastCount: events.length - futureEvents.length,
@@ -840,7 +851,7 @@ function getRecurringAcquisitionDailyRate(sch, price, asOf = today()) {
     const standardQuarterShares = [...frequencies.entries()]
         .sort((a, b) => b[1] - a[1] || b[0] - a[0])[0][0];
 
-    return standardQuarterShares * price * 4 / 365.25;
+    return standardQuarterShares * price * 4 / DAYS_PER_YEAR;
 }
 
 function eventCash(sch, ev) {
@@ -974,6 +985,7 @@ function getStatus(sch, price, asOf = today()) {
     const remainingAcquisitionDailyRate = remValue / remDays;
     const acquisitionDailyRate = getRecurringAcquisitionDailyRate(sch, price, now);
     const dailyRate = acquisitionDailyRate + (comp?.dailyPackage || 0);
+    const annualRate = dailyRate * DAYS_PER_YEAR;
 
     const dealValue = totalEarned + remValue;
 
@@ -986,7 +998,7 @@ function getStatus(sch, price, asOf = today()) {
         nextPayout, daysToNextPayout,
         qPct, daysSincePrev, qLen,
         overallPct, elapsedDays, totalDays,
-        dailyRate, acquisitionDailyRate, remainingAcquisitionDailyRate, comp, remValue,
+        dailyRate, annualRate, acquisitionDailyRate, remainingAcquisitionDailyRate, comp, remValue,
         dealValue, appreciation,
         payCount: pastVestingEvents.length,
         totalCount: vestingEvents.length
@@ -1021,6 +1033,9 @@ function render() {
     const dailyRateEl = document.getElementById('dailyRate');
     dailyRateEl.textContent = `${fmtFull(s.dailyRate)} est. comp per day`;
     dailyRateEl.title = `${fmtFull(Math.round(s.acquisitionDailyRate))} acquisition vesting + ${fmtFull(Math.round(s.comp?.dailyPackage || 0))} compensation package; escrow excluded`;
+    const annualRateEl = document.getElementById('annualRate');
+    annualRateEl.textContent = `${fmtM(s.annualRate)} est. comp per year`;
+    annualRateEl.title = `${fmtFull(s.acquisitionDailyRate * DAYS_PER_YEAR)} annualized acquisition vesting + ${fmtFull(s.comp?.annualComp || 0)} annualized compensation package; escrow excluded`;
 
     // Next payday
     if (s.nextPayout) {
