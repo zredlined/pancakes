@@ -507,6 +507,38 @@
 
         .item-debit .pi-value { color: #ff453a; }
 
+        /* ── Compensation package ───────────────────────────────── */
+        .comp-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .comp-grid { margin-top: 8px; }
+
+        .comp-next {
+            margin-top: 14px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            background: rgba(191, 90, 242, 0.07);
+            border: 1px solid rgba(191, 90, 242, 0.18);
+            color: #c7c7cc;
+            font-size: 14px;
+            line-height: 1.45;
+        }
+
+        .badge-comp { background: rgba(191, 90, 242, 0.14); color: #bf5af2; }
+        .badge-acquisition { background: rgba(10, 132, 255, 0.14); color: #0a84ff; }
+
+        .item-comp {
+            background: rgba(191, 90, 242, 0.05) !important;
+            border: 1px solid rgba(191, 90, 242, 0.14);
+        }
+
+        .item-comp .pi-value { color: #bf5af2; }
+
         /* ── Hidden utility ──────────────────────────────────────── */
         .hidden { display: none !important; }
 
@@ -605,8 +637,15 @@
             </div>
         </div>
 
-        <!-- Stats -->
+        <!-- Acquisition package -->
         <div class="card">
+            <div class="comp-header">
+                <div>
+                    <div class="progress-title">Gretel Acquisition Package</div>
+                    <div class="progress-subtitle">Closing proceeds, scheduled founder vests, and escrow release</div>
+                </div>
+                <span class="badge badge-acquisition">Acquisition</span>
+            </div>
             <div class="stats-grid">
                 <div class="metric">
                     <div class="metric-value deal" id="totalDealValue">—</div>
@@ -618,13 +657,44 @@
                 </div>
                 <div class="metric">
                     <div class="metric-value pos" id="realizedValue">—</div>
-                    <div class="metric-label">Estimated pre-tax vested value</div>
+                    <div class="metric-label">Recorded share-sale proceeds</div>
                 </div>
                 <div class="metric">
                     <div class="metric-value" id="stockAppreciation">—</div>
                     <div class="metric-label">NVDA appreciation</div>
                 </div>
             </div>
+            <div class="progress-subtitle" id="dealBreakdown"></div>
+        </div>
+
+        <!-- Ongoing compensation -->
+        <div class="card hidden" id="compCard">
+            <div class="comp-header">
+                <div>
+                    <div class="progress-title">Compensation Package</div>
+                    <div class="progress-subtitle" id="compSub"></div>
+                </div>
+                <span class="badge badge-comp">Schwab RSUs</span>
+            </div>
+            <div class="stats-grid comp-grid">
+                <div class="metric">
+                    <div class="metric-value deal" id="compAnnual">—</div>
+                    <div class="metric-label">Annualized compensation</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value pos" id="compDaily">—</div>
+                    <div class="metric-label">Package value per day</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="compQuarterly">—</div>
+                    <div class="metric-label">Average quarterly RSU value</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="compFirstVest">—</div>
+                    <div class="metric-label">First RSU vest</div>
+                </div>
+            </div>
+            <div class="comp-next" id="compNext"></div>
         </div>
 
         <!-- Payment schedule -->
@@ -632,7 +702,7 @@
             <details>
                 <summary>
                     <div class="schedule-summary-text">
-                        <h3>Payment Schedule</h3>
+                        <h3>Vesting &amp; Payment Schedule</h3>
                         <span class="schedule-count" id="scheduleCount"></span>
                     </div>
                 </summary>
@@ -730,6 +800,72 @@ function getVestingEvents(sch) {
     return sch.ev.filter(ev => ev.kind === 'vesting');
 }
 
+function getCompEvents(sch) {
+    return sch.comp?.rsu?.events || [];
+}
+
+function compVestValue(event, price) {
+    return Number.isFinite(event.s) ? event.s * price : (event.a || 0);
+}
+
+function compVestSharesLabel(event, price) {
+    if (Number.isFinite(event.s)) {
+        return `${fmtShares(event.s)} ${event.sharesEstimated ? 'modeled ' : ''}RSUs @ ${fmtPrice(price)}`;
+    }
+    return price > 0 ? `~${fmtShares(compVestValue(event, price) / price)} indicative RSUs @ ${fmtPrice(price)}` : '';
+}
+
+function getCompSummary(sch, price, asOf = today()) {
+    const comp = sch.comp;
+    if (!comp) return null;
+
+    const baseSalary = comp.baseSalary || 0;
+    const rsu = comp.rsu || {};
+    const events = [...getCompEvents(sch)].sort((a, b) => a.d.localeCompare(b.d));
+    const marketValue = events.reduce((sum, event) => sum + compVestValue(event, price), 0);
+    const targetValue = rsu.totalValue ?? marketValue;
+    const termYears = rsu.termYears || 4;
+    const futureEvents = events.filter(event => parseDate(event.d) > asOf);
+    const nextEvent = futureEvents[0] || null;
+    const annualRsu = nextEvent ? marketValue / termYears : 0;
+    const annualComp = baseSalary + annualRsu;
+
+    return {
+        baseSalary,
+        events,
+        targetValue,
+        marketValue,
+        shareCount: rsu.shareCount,
+        conversionPrice: rsu.conversionPrice,
+        grantDatePrice: rsu.grantDatePrice,
+        grantDate: rsu.grantDate,
+        termYears,
+        annualComp,
+        dailyPackage: annualComp / 365.25,
+        quarterlyValue: events.length ? marketValue / events.length : 0,
+        nextEvent,
+        pastCount: events.length - futureEvents.length,
+        totalCount: events.length
+    };
+}
+
+function getRecurringAcquisitionDailyRate(sch, price, asOf = today()) {
+    const futureQuarterShares = getVestingEvents(sch)
+        .filter(event => parseDate(event.d) > asOf)
+        .map(event => event.baseShares ?? Math.max(0, (event.s || 0) - (event.escrowShares || 0)))
+        .filter(shares => shares > 0);
+    if (!futureQuarterShares.length) return 0;
+
+    const frequencies = futureQuarterShares.reduce((counts, shares) => {
+        counts.set(shares, (counts.get(shares) || 0) + 1);
+        return counts;
+    }, new Map());
+    const standardQuarterShares = [...frequencies.entries()]
+        .sort((a, b) => b[1] - a[1] || b[0] - a[0])[0][0];
+
+    return standardQuarterShares * price * 4 / 365.25;
+}
+
 function eventCash(sch, ev) {
     if (ev.kind === 'escrow-cash' && typeof sch.escrow?.totalCashPaid === 'number') {
         return sch.escrow.totalCashPaid;
@@ -753,29 +889,15 @@ function saleProceeds(sale) {
     return typeof sale.a === 'number' ? sale.a : sale.s * sale.p;
 }
 
-function salePreTaxValue(sale) {
-    return typeof sale.preTaxValue === 'number' ? sale.preTaxValue : saleProceeds(sale);
-}
-
 function getSaleSummary(sch, asOf) {
     const sales = getSales(sch)
         .filter(s => parseDate(s.d) <= asOf)
         .sort((a, b) => parseDate(a.d) - parseDate(b.d));
 
-    return sales.reduce((acc, sale) => {
-        acc.soldShares += sale.s;
-        acc.actualProceeds += saleProceeds(sale);
-        acc.preTaxProceeds += salePreTaxValue(sale);
-        acc.withholdingCovered += sale.withholdingCovered || 0;
-        acc.lastPrice = sale.p;
-        return acc;
-    }, {
-        soldShares: 0,
-        actualProceeds: 0,
-        preTaxProceeds: 0,
-        withholdingCovered: 0,
-        lastPrice: 0
-    });
+    return sales.reduce((totals, sale) => ({
+        soldShares: totals.soldShares + sale.s,
+        actualProceeds: totals.actualProceeds + saleProceeds(sale)
+    }), { soldShares: 0, actualProceeds: 0 });
 }
 
 function getEscrowSummary(sch, price) {
@@ -840,6 +962,7 @@ function getStatus(sch, price, asOf = today()) {
     const saleSummary = getSaleSummary(sch, now);
     const escrow = getEscrowSummary(sch, price);
     const escrowDate = getEscrowDate(sch);
+    const comp = getCompSummary(sch, price, now);
 
     const pastEvents   = events.filter(e => parseDate(e.d) <= now);
     const futureEvents = events.filter(e => parseDate(e.d) > now);
@@ -850,10 +973,8 @@ function getStatus(sch, price, asOf = today()) {
     const issuedShares = pastEvents.reduce((s, e) => s + getEventNetShares(e), 0);
     const floatingIssuedShares = Math.max(0, issuedShares - saleSummary.soldShares);
     const withheldTaxes = pastEvents.reduce((s, e) => s + getEventWithholding(e), 0);
-    const uncoveredWithholding = withheldTaxes - saleSummary.withholdingCovered;
-    const realizedPreTaxValue = saleSummary.preTaxProceeds + uncoveredWithholding;
     const pastCash     = pastEvents.reduce((s, e) => s + eventCash(sch, e), 0);
-    const totalEarned  = sch.k + realizedPreTaxValue + floatingIssuedShares * price + pastCash;
+    const totalEarned  = sch.k + pastCash + saleSummary.actualProceeds + withheldTaxes + floatingIssuedShares * price;
 
     const remShares = futureEvents.reduce((s, e) => s + e.s, 0);
     const remCash   = futureEvents.reduce((s, e) => s + eventCash(sch, e), 0);
@@ -862,14 +983,48 @@ function getStatus(sch, price, asOf = today()) {
     const daysToNext = nextEvent ? Math.ceil((parseDate(nextEvent.d) - now) / 86400000) : 0;
     const nextValue  = nextEvent ? nextEvent.s * price + eventCash(sch, nextEvent) : 0;
 
+    const payoutItems = [
+        ...events
+            .filter(event => (event.s || 0) > 0 || eventCash(sch, event) > 0)
+            .map(event => ({
+                type: 'acquisition',
+                d: event.d,
+                event,
+                value: (event.s || 0) * price + eventCash(sch, event)
+            })),
+        ...getCompEvents(sch)
+            .filter(event => (event.s ?? event.a ?? 0) > 0)
+            .map(event => ({
+                type: 'comp',
+                d: event.d,
+                event,
+                value: compVestValue(event, price)
+            }))
+    ].sort((a, b) => a.d.localeCompare(b.d) || a.type.localeCompare(b.type));
+    const nextPayoutItem = payoutItems.find(item => parseDate(item.d) > now) || null;
+    const nextPayoutItems = nextPayoutItem
+        ? payoutItems.filter(item => item.d === nextPayoutItem.d)
+        : [];
+    const nextPayout = nextPayoutItem
+        ? {
+            d: nextPayoutItem.d,
+            items: nextPayoutItems,
+            value: nextPayoutItems.reduce((sum, item) => sum + item.value, 0)
+        }
+        : null;
+    const prevPayout = [...payoutItems].reverse().find(item => parseDate(item.d) <= now) || null;
+    const daysToNextPayout = nextPayout
+        ? Math.ceil((parseDate(nextPayout.d) - now) / 86400000)
+        : 0;
+
     let qPct = 0, daysSincePrev = 0, qLen = 0;
-    if (prevEvent && nextEvent) {
-        const pDate   = parseDate(prevEvent.d);
-        const nDate   = parseDate(nextEvent.d);
+    if (prevPayout && nextPayout) {
+        const pDate   = parseDate(prevPayout.d);
+        const nDate   = parseDate(nextPayout.d);
         daysSincePrev = Math.max(0, Math.floor((now - pDate) / 86400000));
         qLen          = Math.floor((nDate - pDate) / 86400000);
         qPct          = Math.min(daysSincePrev / qLen, 1);
-    } else if (!nextEvent) {
+    } else if (!nextPayout) {
         qPct = 1;
     }
 
@@ -884,26 +1039,23 @@ function getStatus(sch, price, asOf = today()) {
     const daysToEscrow = escrowDate ? Math.max(0, Math.ceil((escrowDate - now) / 86400000)) : 0;
 
     const remDays   = Math.max(1, Math.ceil((lastDate - now) / 86400000));
-    const dailyRate = remValue / remDays;
+    const remainingAcquisitionDailyRate = remValue / remDays;
+    const acquisitionDailyRate = getRecurringAcquisitionDailyRate(sch, price, now);
+    const dailyRate = acquisitionDailyRate + (comp?.dailyPackage || 0);
 
-    const allShares = events.reduce((s, e) => {
-        const shares = parseDate(e.d) <= now ? getEventNetShares(e) : (e.s || 0);
-        return s + shares;
-    }, 0);
-    const allCash   = events.reduce((s, e) => s + eventCash(sch, e), 0);
-    const floatingDealShares = Math.max(0, allShares - saleSummary.soldShares);
-    const dealValue = floatingDealShares * price + realizedPreTaxValue + sch.k + allCash;
+    const dealValue = totalEarned + remValue;
 
     const appreciation = ((price - sch.p) / sch.p) * 100;
 
     return {
         totalEarned, issuedShares, floatingIssuedShares, withheldTaxes,
-        uncoveredWithholding, realizedPreTaxValue, pastCash, saleSummary,
+        pastCash, saleSummary, remShares,
         nextEvent, daysToNext, nextValue, prevEvent,
+        nextPayout, daysToNextPayout,
         qPct, daysSincePrev, qLen,
         overallPct, elapsedDays, totalDays, escrowDate,
         escrowDone, escrowPct, daysToEscrow, escrow,
-        dailyRate, remValue,
+        dailyRate, acquisitionDailyRate, remainingAcquisitionDailyRate, comp, remValue,
         dealValue, appreciation,
         payCount: pastVestingEvents.length,
         totalCount: vestingEvents.length
@@ -918,7 +1070,7 @@ function render() {
     const ap    = s.appreciation;
 
     // Stock header
-    document.getElementById('stockPrice').textContent = fmtFull(price);
+    document.getElementById('stockPrice').textContent = fmtPrice(price);
     const changeEl = document.getElementById('priceChange');
     changeEl.textContent = `${ap >= 0 ? '↑' : '↓'} ${ap >= 0 ? '+' : ''}${ap.toFixed(2)}% from acquisition`;
     changeEl.style.color = ap >= 0 ? '#30d158' : '#ff453a';
@@ -934,44 +1086,56 @@ function render() {
         document.getElementById('totalEarned').textContent = fmtM(s.totalEarned);
     }
     document.getElementById('heroBreakdown').textContent =
-        `$${(schedule.k / 1e6).toFixed(1)}M cash at close  ·  ${fmtM(s.realizedPreTaxValue)} pre-tax vested value  ·  ${fmtShares(s.floatingIssuedShares)} shares held`;
-    document.getElementById('dailyRate').textContent =
-        `${fmtFull(Math.round(s.dailyRate))} vesting per day`;
+        `${fmtM(schedule.k + s.pastCash)} cash payments · ${fmtM(s.saleSummary.actualProceeds)} share sales · ${fmtShares(s.floatingIssuedShares)} estimated shares held`;
+    const dailyRateEl = document.getElementById('dailyRate');
+    dailyRateEl.textContent = `${fmtFull(Math.round(s.dailyRate))} recurring value per day`;
+    dailyRateEl.title = `${fmtFull(Math.round(s.acquisitionDailyRate))} acquisition vesting + ${fmtFull(Math.round(s.comp?.dailyPackage || 0))} compensation package; escrow excluded`;
 
     // Next payday
-    if (s.nextEvent) {
-        const nd = parseDate(s.nextEvent.d);
-        document.getElementById('nextPayDate').textContent = s.nextEvent.dateLabel || fmtDate(nd);
-        document.getElementById('nextPayDays').textContent = s.daysToNext;
+    if (s.nextPayout) {
+        const nd = parseDate(s.nextPayout.d);
+        const acquisitionItem = s.nextPayout.items.find(item => item.type === 'acquisition');
+        document.getElementById('nextPayDate').textContent =
+            acquisitionItem?.event.dateLabel || fmtDate(nd);
+        document.getElementById('nextPayDays').textContent = s.daysToNextPayout;
         document.getElementById('quarterProgress').style.width = `${s.qPct * 100}%`;
 
-        const netCash = eventCash(schedule, s.nextEvent);
-        const escrowShares = s.nextEvent.escrowShares || 0;
-        const baseShares = s.nextEvent.baseShares ?? Math.max(0, (s.nextEvent.s || 0) - escrowShares);
-        let details = escrowShares > 0
-            ? `${fmtShares(baseShares)} vest shares + ${fmtShares(escrowShares)} escrow shares @ ${fmtPrice(price)} today`
-            : `${fmtShares(s.nextEvent.s)} shares @ ${fmtPrice(price)} today`;
-        if (netCash > 0) details += ` + ${fmtM(netCash)} cash`;
-        details += `  ·  ~${fmtFull(Math.round(s.nextValue))} at current price`;
+        const details = s.nextPayout.items.map(item => {
+            if (item.type === 'comp') {
+                return ['Schwab comp RSU', compVestSharesLabel(item.event, price)].filter(Boolean).join(' · ');
+            }
+
+            const event = item.event;
+            const netCash = eventCash(schedule, event);
+            const escrowShares = event.escrowShares || 0;
+            const baseShares = event.baseShares ?? Math.max(0, (event.s || 0) - escrowShares);
+            let text = escrowShares > 0
+                ? `Acquisition vest · ${fmtShares(baseShares)} vest shares + ${fmtShares(escrowShares)} escrow shares @ ${fmtPrice(price)}`
+                : `Acquisition vest · ${fmtShares(event.s)} shares @ ${fmtPrice(price)}`;
+            if (netCash > 0) text += ` + ${fmtM(netCash)} cash`;
+            return text;
+        }).join('  +  ');
         document.getElementById('nextPayDetails').textContent = details;
+        document.getElementById('nextPayDetails').textContent +=
+            `  ·  ~${fmtFull(Math.round(s.nextPayout.value))} total value`;
         document.getElementById('paydayCard').classList.remove('hidden');
     } else {
         document.getElementById('paydayCard').classList.add('hidden');
     }
 
     // Escrow
-    const shareTiming = s.escrowDate ? `Shares due ${fmtDate(s.escrowDate)}` : 'Share timing pending';
+    const shareTiming = s.escrowDate ? `Shares scheduled ${fmtDate(s.escrowDate)}` : 'Share timing pending';
     const cashTiming = s.escrow.cashIssued && s.escrow.cashCheckDate
         ? `Cash paid ${fmtDate(parseDate(s.escrow.cashCheckDate))}`
         : 'Cash timing pending';
     document.getElementById('escrowSub').textContent = `${cashTiming}  ·  ${shareTiming}`;
     document.getElementById('escrowProgress').style.width = `${s.escrowPct * 100}%`;
     document.getElementById('escrowText').textContent = s.escrowDone
-        ? 'Cash and shares released'
+        ? 'Scheduled release date passed'
         : `${s.daysToEscrow} days until shares`;
     document.getElementById('escrowGrid').innerHTML = [
         ['Cash paid', fmtFull(s.escrow.estimatedCash)],
-        ['Deferred shares', fmtShares(s.escrow.heldShares)],
+        ['Escrow shares', fmtShares(s.escrow.heldShares)],
         ['Stock value', fmtM(s.escrow.heldSharesValue)],
         ['Total value', fmtM(s.escrow.estimatedTotalValue)]
     ].map(([label, value]) => `<div class="metric"><div class="metric-value">${value}</div><div class="metric-label">${label}</div></div>`).join('');
@@ -985,15 +1149,42 @@ function render() {
     // Stats
     document.getElementById('totalDealValue').textContent = fmtM(s.dealValue);
     document.getElementById('remainingValue').textContent = fmtM(s.remValue);
-    document.getElementById('realizedValue').textContent = fmtM(s.realizedPreTaxValue);
+    document.getElementById('realizedValue').textContent = fmtM(s.saleSummary.actualProceeds);
+    document.getElementById('dealBreakdown').textContent =
+        `${fmtM(schedule.k + s.pastCash)} cash received · ${fmtM(s.saleSummary.actualProceeds)} recorded sales · ${fmtM(s.withheldTaxes)} withholding · ${fmtShares(s.floatingIssuedShares + s.remShares)} estimated held or unvested shares at market`;
 
     const apEl = document.getElementById('stockAppreciation');
     apEl.className = 'metric-value ' + (ap >= 0 ? 'pos' : 'neg');
     apEl.textContent = `${ap >= 0 ? '+' : ''}${ap.toFixed(1)}%`;
 
+    // Ongoing compensation
+    if (s.comp) {
+        const comp = s.comp;
+        const firstEvent = comp.events[0];
+        const award = comp.shareCount
+            ? `${fmtShares(comp.shareCount)} RSUs issued · ${fmtM(comp.shareCount * comp.grantDatePrice)} at the ${fmtDate(parseDate(comp.grantDate))} grant price of ${fmtPrice(comp.grantDatePrice)} · ${fmtM(comp.targetValue)} agreed target · ~${fmtPrice(comp.conversionPrice)} conversion`
+            : `${fmtM(comp.targetValue)} RSU target`;
+        document.getElementById('compSub').textContent =
+            `${fmtFull(comp.baseSalary)} base · ${award} · ${comp.totalCount} quarterly vests over ${comp.termYears} years`;
+        document.getElementById('compAnnual').textContent = fmtM(comp.annualComp);
+        document.getElementById('compDaily').textContent = fmtFull(Math.round(comp.dailyPackage));
+        document.getElementById('compQuarterly').textContent = fmtFull(comp.quarterlyValue);
+        document.getElementById('compFirstVest').textContent = firstEvent
+            ? parseDate(firstEvent.d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+            : '—';
+        document.getElementById('compNext').textContent = comp.nextEvent
+            ? `Next RSU vest ${fmtDate(parseDate(comp.nextEvent.d))} · ${compVestSharesLabel(comp.nextEvent, price)} · ${fmtFull(compVestValue(comp.nextEvent, price))} estimated value`
+            : 'All modeled compensation vests complete';
+        document.getElementById('compCard').classList.remove('hidden');
+    } else {
+        document.getElementById('compCard').classList.add('hidden');
+    }
+
     // Schedule header
+    const completedVests = s.payCount + (s.comp?.pastCount || 0);
+    const totalVests = s.totalCount + (s.comp?.totalCount || 0);
     document.getElementById('scheduleCount').textContent =
-        `${s.payCount} of ${s.totalCount} complete`;
+        `${completedVests} of ${totalVests} vests complete`;
 
     renderPaymentList();
 }
@@ -1004,6 +1195,7 @@ function renderPaymentList() {
     const events = schedule.ev;
     const debits = getEscrowDebits(schedule);
     const sales  = getSales(schedule);
+    const compEvents = getCompEvents(schedule);
     let nextFound = false;
 
     let vestingIdx = 0;
@@ -1014,6 +1206,12 @@ function renderPaymentList() {
             idx: ev.kind === 'vesting' ? vestingIdx++ : null,
             date: parseDate(ev.d)
         })),
+        ...compEvents.map((event, idx) => ({
+            type: 'comp',
+            event,
+            idx,
+            date: parseDate(event.d)
+        })),
         ...sales.map(sale => ({ type: 'sale', sale, date: parseDate(sale.d) })),
         ...debits.map(debit => ({ type: 'debit', debit, date: parseDate(debit.d) }))
     ].sort((a, b) => a.date - b.date || (a.type === 'vesting' ? -1 : 1));
@@ -1023,18 +1221,44 @@ function renderPaymentList() {
         const isPast = date <= now;
         const daysTo = Math.ceil((date - now) / 86400000);
 
+        if (row.type === 'comp') {
+            const event = row.event;
+            const amount = compVestValue(event, price);
+            const isNext = !isPast && !nextFound;
+            if (isNext) nextFound = true;
+            const cls = `payment-item item-comp ${isPast ? 'item-past' : isNext ? 'item-next' : ''}`;
+            const icon = isPast
+                ? '<span class="pi-check">✓</span>'
+                : isNext
+                    ? '<span class="pi-next">▶</span>'
+                    : '<span class="pi-dot">·</span>';
+            const daysBadge = !isPast && daysTo > 0
+                ? `<span class="badge badge-days">in ${daysTo}d</span>`
+                : '';
+            return `<div class="${cls}">
+                <div class="pi-icon">${icon}</div>
+                <div class="pi-info">
+                    <div class="pi-row1">
+                        <span class="pi-date">${fmtDate(date)}</span>
+                        <span class="pi-qlabel">${getQL(row.idx)}</span>
+                        <span class="badge badge-comp">Comp RSU</span>${daysBadge}
+                    </div>
+                    <div class="pi-row2">${compVestSharesLabel(event, price)}${event.confirmed === false ? ' · estimated vest date' : ''}</div>
+                </div>
+                <div class="pi-value">${fmtM(amount)}</div>
+            </div>`;
+        }
+
         if (row.type === 'sale') {
             const sale = row.sale;
-            const totalVal = salePreTaxValue(sale);
+            const totalVal = saleProceeds(sale);
             const rowDate = sale.dateLabel || fmtDate(date);
             const lots = Array.isArray(sale.lots) && sale.lots.length
                 ? ` · ${sale.lots.map(lot => typeof lot === 'number'
                     ? `${fmtShares(lot)} shares`
                     : `${fmtShares(lot.s)} shares / ${fmtFull(lot.a)}`).join(' + ')}`
                 : '';
-            const saleDetails = sale.grossShares
-                ? `${fmtShares(sale.s)} net sold @ ${fmtPrice(sale.p)} avg · ${fmtShares(sale.grossShares)} gross @ ${fmtPrice(sale.estimatePrice)} vest FMV${lots}`
-                : `${fmtShares(sale.s)} shares sold @ ${fmtPrice(sale.p)}${lots}`;
+            const saleDetails = `${fmtShares(sale.s)} shares sold @ ${fmtPrice(sale.p)}${lots}`;
             const daysBdg = !isPast && daysTo > 0
                 ? `<span class="badge badge-days">in ${daysTo}d</span>` : '';
             return `<div class="payment-item item-sale ${isPast ? 'item-past' : ''}">
@@ -1102,7 +1326,7 @@ function renderPaymentList() {
             amtStr = 'Escrow cash and expense fund paid';
         } else if (ev.escrowShares > 0) {
             const baseShares = ev.baseShares ?? Math.max(0, (ev.s || 0) - ev.escrowShares);
-            amtStr = `${fmtShares(baseShares)} vest shares + ${fmtShares(ev.escrowShares)} deferred escrow shares @ ${fmtPrice(price)} today`;
+            amtStr = `${fmtShares(baseShares)} scheduled gross vest shares + ${fmtShares(ev.escrowShares)} escrow shares @ ${fmtPrice(price)} today`;
         } else if (netCash > 0) {
             amtStr = `${fmtShares(ev.s)} shares @ ${fmtPrice(price)} today + ${fmtM(netCash)} net cash`;
         } else {
